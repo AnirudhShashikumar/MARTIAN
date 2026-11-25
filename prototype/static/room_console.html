@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CampusFlow · Live Classroom C-101 Console</title>
+<style>
+  :root {
+    --bg: #080b11;
+    --surface: #0f131c;
+    --surface-2: #161c2a;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --emerald: #10b981;
+    --amber: #f59e0b;
+    --rose: #ef4444;
+    --sky: #38bdf8;
+    --accent: #f97316;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .shell { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  .top {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark {
+    width: 34px; height: 34px; border-radius: 9px; background: var(--accent); color: #080b11;
+    font-weight: 900; display: grid; place-items: center;
+  }
+  .title { font-size: 16px; font-weight: 800; }
+  .sub { font-size: 12px; color: var(--muted); }
+  .pills { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; padding: 6px 10px;
+    border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border);
+  }
+  .pill.ok { border-color: rgba(16,185,129,0.5); color: #6ee7b7; }
+  .pill.warn { border-color: rgba(245,158,11,0.55); color: #fcd34d; }
+  .pill.err { border-color: rgba(239,68,68,0.55); color: #fca5a5; }
+
+  .grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .sec-head { display: flex; align-items: center; justify-content: space-between; }
+  .sec-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kpi {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 12px;
+  }
+  .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .kpi-val { font-family: var(--mono); font-size: 20px; font-weight: 800; }
+
+  .meter { height: 6px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; }
+  .meter-fill { height: 100%; width: 100%; transform-origin: left; transform: scaleX(0); background: var(--amber); transition: transform 200ms var(--ease); }
+
+  .dev-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .dev {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .dev-name { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .dev-state { font-family: var(--mono); font-size: 15px; font-weight: 900; }
+  .dev.on { border-color: rgba(16,185,129,0.5); }
+  .dev.on .dev-state { color: #6ee7b7; }
+  .dev.standby { border-color: rgba(245,158,11,0.55); }
+  .dev.standby .dev-state { color: #fcd34d; }
+  .dev.off .dev-state { color: #94a3b8; }
+
+  .approval {
+    display: none; padding: 14px; border-radius: 10px;
+    background: rgba(245,158,11,0.12); border: 1.5px solid rgba(245,158,11,0.65);
+  }
+  .approval.visible { display: flex; flex-direction: column; gap: 10px; }
+  .ap-title { font-weight: 800; color: #fcd34d; font-size: 13px; }
+  .ap-text { font-size: 12.5px; line-height: 1.45; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  button {
+    font-family: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--surface-2);
+    color: var(--text); border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 700;
+    transition: background-color 140ms var(--ease), transform 110ms var(--ease);
+  }
+  button:hover:not(:disabled) { background: #20293d; border-color: var(--border-strong); }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  .btn-approve { background: var(--emerald); border-color: var(--emerald); color: #052017; }
+  .btn-reject { background: rgba(239,68,68,0.16); border-color: rgba(239,68,68,0.5); color: #fecaca; }
+  .btn-accent { background: var(--accent); border-color: var(--accent); color: #080b11; }
+
+  .err-banner {
+    display: none; padding: 10px 12px; border-radius: 8px; background: rgba(239,68,68,0.16);
+    border: 1px solid rgba(239,68,68,0.55); color: #fecaca; font-size: 12px; font-weight: 600;
+  }
+  .err-banner.visible { display: block; }
+
+  .audit-list { display: flex; flex-direction: column; gap: 8px; max-height: 410px; overflow-y: auto; }
+  .audit-item {
+    padding: 9px 11px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .audit-top { display: flex; justify-content: space-between; margin-bottom: 3px; font-family: var(--mono); font-size: 10.5px; color: var(--sky); }
+  .audit-detail { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">CF</div>
+      <div>
+        <div class="title">CampusFlow · Classroom C-101 Live Hardware Console</div>
+        <div class="sub">AMB82-Mini USB Serial Occupancy → Tiered Agentic Policy → Instant Android WebSocket (/room-panel)</div>
+      </div>
+    </div>
+    <div class="pills">
+      <span class="pill" id="pillPhone">Phone: 0 connected</span>
+      <span class="pill" id="pillAck">ACK: —</span>
+      <a href="/room-panel" target="_blank" style="text-decoration:none;"><button type="button">Open /room-panel ↗</button></a>
+      <button type="button" id="btnReset">Reset Room</button>
+    </div>
+  </header>
+
+  <div class="err-banner" id="errBanner"></div>
+
+  <div class="grid">
+    <!-- LEFT: LIVE SENSOR, APPLIANCES & CONTROLS -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <section class="card">
+        <div class="sec-head">
+          <span class="sec-title">AMB82-Mini Live Occupancy &amp; Policy State</span>
+          <span class="pill" id="pillStatus">IDLE</span>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi">
+            <div class="kpi-label">Person Count</div>
+            <div class="kpi-val" id="kpiCount">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Confidence</div>
+            <div class="kpi-val" id="kpiConf">—</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Sustained Vacant</div>
+            <div class="kpi-val" id="kpiVac">0.0s</div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:5px;">
+            <span id="statusDetail">Waiting for AMB82-Mini telemetry…</span>
+            <span id="vacTarget">Target: 15s</span>
+          </div>
+          <div class="meter"><div class="meter-fill" id="vacMeter"></div></div>
+        </div>
+
+        <div class="dev-row">
+          <div class="dev on" id="devLights"><span class="dev-name">Lights (Tier 1 Auto)</span><span class="dev-state" id="stLights">On</span></div>
+          <div class="dev on" id="devFans"><span class="dev-name">Fans (Tier 1 Auto)</span><span class="dev-state" id="stFans">On</span></div>
+          <div class="dev on" id="devProj"><span class="dev-name">Projector (Tier 2)</span><span class="dev-state" id="stProj">On</span></div>
+        </div>
+
+        <!-- TIER 2 FACILITIES APPROVAL -->
+        <div class="approval" id="approvalBox">
+          <div class="ap-title">Tier 2 · Facilities Supervisor Approval Required</div>
+          <div class="ap-text" id="apText"></div>
+          <div class="btn-row">
+            <button type="button" class="btn-approve" id="btnApprove">Approve &amp; Verify Occupancy</button>
+            <button type="button" class="btn-reject" id="btnReject">Reject</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="sec-head">
+          <span class="sec-title">Policy Mode &amp; Dry-Run Injectors (When AMB82 Unplugged)</span>
+          <span class="pill" id="pillSched">Unscheduled</span>
+        </div>
+        <div class="btn-row">
+          <button type="button" id="btnToggleSched">Switch to Mid-Schedule (Booked)</button>
+          <button type="button" id="btnToggleOverride">Toggle Wall Override</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn-accent" id="btnSimVacant">Stream Vacant (0 · 0.94)</button>
+          <button type="button" id="btnSimOccupied">Inject Person (1 · 0.96)</button>
+          <button type="button" id="btnSimLowConf">Inject Uncertain (0 · 0.35)</button>
+          <button type="button" id="btnStopSim">Stop Dry-Run Stream</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT: CHRONOLOGICAL AUDIT LOG -->
+    <section class="card">
+      <div class="sec-head">
+        <span class="sec-title">Closed-Loop Decision &amp; ACK Audit</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted);" id="sourceBadge">Source: none</span>
+      </div>
+      <div class="audit-list" id="auditList"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  let latest = null;
+  let simTimer = null;
+
+  function showErr(msg) {
+    const el = document.getElementById('errBanner');
+    if (!msg) { el.classList.remove('visible'); return; }
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  async function api(path, body = null) {
+    showErr('');
+    const res = await fetch(path, {
+      method: body === null ? 'GET' : 'POST',
+      headers: body === null ? {} : { 'Content-Type': 'application/json' },
+      body: body === null ? undefined : JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showErr(data.detail || 'Request blocked by policy.');
+      await refresh();
+      return null;
+    }
+    render(data);
+    return data;
+  }
+
+  function render(s) {
+    latest = s;
+    const t = s.telemetry;
+    document.getElementById('kpiCount').textContent = t.person_count === null ? '—' : t.person_count;
+    document.getElementById('kpiConf').textContent = t.confidence === null ? '—' : `${Math.round(t.confidence * 100)}%`;
+    document.getElementById('kpiVac').textContent = `${t.vacant_seconds.toFixed(1)}s`;
+    document.getElementById('vacTarget').textContent = `Target: ${s.policy.vacant_threshold_sec}s`;
+    document.getElementById('vacMeter').style.transform = `scaleX(${Math.min(1, t.vacant_seconds / s.policy.vacant_threshold_sec)})`;
+    document.getElementById('statusDetail').textContent = s.status_detail;
+    document.getElementById('sourceBadge').textContent = `Source: ${t.source}`;
+
+    const pPhone = document.getElementById('pillPhone');
+    pPhone.textContent = `Phone: ${s.connected_phones} connected`;
+    pPhone.className = 'pill ' + (s.connected_phones > 0 ? 'ok' : 'warn');
+
+    const pAck = document.getElementById('pillAck');
+    if (s.last_ack) {
+      pAck.textContent = s.last_ack.verified ? `ACK ✓ (${s.last_ack.latency_ms ?? 0}ms)` : 'ACK MISMATCH';
+      pAck.className = 'pill ' + (s.last_ack.verified ? 'ok' : 'err');
+    } else {
+      pAck.textContent = 'ACK: —';
+      pAck.className = 'pill';
+    }
+
+    const pStat = document.getElementById('pillStatus');
+    pStat.textContent = s.status.toUpperCase();
+    pStat.className = 'pill ' + (s.status === 'fail_safe_hold' ? 'err' : (s.status === 'pending_approval' ? 'warn' : 'ok'));
+
+    const pSched = document.getElementById('pillSched');
+    pSched.textContent = s.class_scheduled ? 'Mid-Schedule (Booked)' : 'Unscheduled (Free)';
+    pSched.className = 'pill ' + (s.class_scheduled ? 'warn' : 'ok');
+    document.getElementById('btnToggleSched').textContent = s.class_scheduled
+      ? 'Switch to Unscheduled (Moved to Lab 2)'
+      : 'Switch to Mid-Schedule (Booked)';
+
+    [['Lights', 'devLights', 'stLights'], ['Fans', 'devFans', 'stFans'], ['Projector', 'devProj', 'stProj']].forEach(([k, cid, sid]) => {
+      const val = s.devices[k];
+      document.getElementById(sid).textContent = val;
+      document.getElementById(cid).className = 'dev ' + val.toLowerCase();
+    });
+
+    const ap = document.getElementById('approvalBox');
+    if (s.pending_proposal) {
+      document.getElementById('apText').textContent = s.pending_proposal.reason;
+      ap.classList.add('visible');
+    } else {
+      ap.classList.remove('visible');
+    }
+
+    const list = document.getElementById('auditList');
+    list.innerHTML = s.audit.length
+      ? s.audit.map(a => `
+          <div class="audit-item">
+            <div class="audit-top"><span>${a.stage}</span><span>${new Date(a.at * 1000).toLocaleTimeString()}</span></div>
+            <div style="font-weight:700;">${a.title}</div>
+            <div class="audit-detail">${a.detail}</div>
+          </div>
+        `).join('')
+      : '<div style="color:var(--muted);font-size:12px;">No events yet. Connect AMB82 bridge or click Stream Vacant.</div>';
+  }
+
+  async function refresh() { await api('/api/room/live'); }
+
+  function connectWs() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${proto}://${location.host}/ws/room-panel?role=console`);
+    ws.onmessage = e => {
+      const m = JSON.parse(e.data);
+      if (m.type === 'snapshot') render(m.state);
+    };
+    ws.onclose = () => setTimeout(connectWs, 1200);
+  }
+
+  document.getElementById('btnApprove').addEventListener('click', () => {
+    if (!latest?.pending_proposal) return;
+    api('/api/room/review', { proposal_id: latest.pending_proposal.id, decision: 'approve' });
+  });
+  document.getElementById('btnReject').addEventListener('click', () => {
+    if (!latest?.pending_proposal) return;
+    api('/api/room/review', { proposal_id: latest.pending_proposal.id, decision: 'reject' });
+  });
+  document.getElementById('btnToggleSched').addEventListener('click', () => {
+    api('/api/room/schedule', { class_scheduled: !latest?.class_scheduled });
+  });
+  document.getElementById('btnToggleOverride').addEventListener('click', () => {
+    api('/api/room/override', { active: !latest?.wall_override });
+  });
+  document.getElementById('btnReset').addEventListener('click', () => {
+    if (simTimer) { clearInterval(simTimer); simTimer = null; }
+    api('/api/room/reset', {});
+  });
+
+  document.getElementById('btnSimVacant').addEventListener('click', () => {
+    if (simTimer) clearInterval(simTimer);
+    const send = () => api('/api/room/telemetry', { person_count: 0, confidence: 0.94, source: 'dry-run-sim' });
+    send();
+    simTimer = setInterval(send, 1000);
+  });
+  document.getElementById('btnSimOccupied').addEventListener('click', () => {
+    if (simTimer) { clearInterval(simTimer); simTimer = null; }
+    api('/api/room/telemetry', { person_count: 1, confidence: 0.96, source: 'dry-run-sim' });
+  });
+  document.getElementById('btnSimLowConf').addEventListener('click', () => {
+    if (simTimer) { clearInterval(simTimer); simTimer = null; }
+    api('/api/room/telemetry', { person_count: 0, confidence: 0.35, source: 'dry-run-sim' });
+  });
+  document.getElementById('btnStopSim').addEventListener('click', () => {
+    if (simTimer) { clearInterval(simTimer); simTimer = null; }
+  });
+
+  refresh();
+  connectWs();
+})();
+</script>
+</body>
+</html>

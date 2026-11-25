@@ -3,20 +3,48 @@
 from contextlib import asynccontextmanager, closing
 from dataclasses import dataclass
 import json
+import mimetypes
 import os
 from pathlib import Path
 import sqlite3
 from tempfile import TemporaryDirectory
 from typing import Literal, Optional
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+mimetypes.add_type("image/webp", ".webp")
+
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict
-from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 import agent
+import room_live
 import scenario
+
+
+def _allowed_local_host(host: str) -> bool:
+    name = host.split(":")[0].lower()
+    return name in {"127.0.0.1", "localhost", "testserver"} or name.startswith(("192.168.", "10.", "172."))
+
+
+class LocalHostMiddleware:
+    """Permit localhost (adb reverse) and private LAN hotspot IPs for HTTP and WebSockets."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in {"http", "websocket"}:
+            headers = dict(scope.get("headers") or [])
+            host = headers.get(b"host", b"").decode("latin-1")
+            if host and not _allowed_local_host(host):
+                if scope["type"] == "http":
+                    resp = PlainTextResponse("Invalid host header", status_code=400)
+                    await resp(scope, receive, send)
+                    return
+                await send({"type": "websocket.close", "code": 1008})
+                return
+        await self.app(scope, receive, send)
 
 
 ROOT = Path(__file__).parent
@@ -117,7 +145,32 @@ class Command(BaseModel):
     decision: Optional[Literal["approve", "reject"]] = None
 
 
-def create_app():
+class TelemetryPayload(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    person_count: int
+    confidence: float = 0.95
+    source: str = "amb82-npu"
+
+
+class SchedulePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    class_scheduled: bool
+    vacant_threshold_sec: Optional[float] = None
+
+
+class OverridePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    active: bool
+
+
+class LiveReviewPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    proposal_id: str
+    decision: Literal["approve", "reject"]
+    role: str = "Facilities supervisor"
+
+
+def create_app(room_clock=None):
     @asynccontextmanager
     async def lifespan(application):
         with TemporaryDirectory(prefix="campusflow-") as scratch:
@@ -125,10 +178,12 @@ def create_app():
             path = Path(configured) if configured else Path(scratch) / "demo.sqlite3"
             application.state.store = Store(path)
             application.state.store.initialize()
+            kwargs = {"clock": room_clock} if room_clock is not None else {}
+            application.state.room_live = room_live.RoomLiveController(**kwargs)
             yield
 
     application = FastAPI(title="CampusFlow", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
-    application.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"])
+    application.add_middleware(LocalHostMiddleware)
     application.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
     @application.get("/")
@@ -139,6 +194,14 @@ def create_app():
     @application.get("/resources")
     def dashboard():
         return FileResponse(ROOT / "static" / "index.html")
+
+    @application.get("/room-panel")
+    def room_panel():
+        return FileResponse(ROOT / "static" / "room_panel.html")
+
+    @application.get("/room-console")
+    def room_console():
+        return FileResponse(ROOT / "static" / "room_console.html")
 
     @application.get("/api/state")
     def state():
@@ -159,6 +222,94 @@ def create_app():
             return store.apply(body, choice)
         except scenario.ScenarioError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+
+    # === LIVE HARDWARE-IN-THE-LOOP CLASSROOM ENDPOINTS & WEBSOCKET ===
+
+    @application.get("/api/room/live")
+    def room_live_state():
+        return application.state.room_live.snapshot()
+
+    @application.post("/api/room/telemetry")
+    async def room_telemetry(body: TelemetryPayload):
+        ctrl: room_live.RoomLiveController = application.state.room_live
+        try:
+            snap, cmd = ctrl.ingest_telemetry(body.person_count, body.confidence, body.source)
+        except room_live.RoomPolicyError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        if cmd:
+            await ctrl.broadcast(cmd, target_role="phone")
+        await ctrl.broadcast({"type": "snapshot", "state": snap})
+        return snap
+
+    @application.post("/api/room/schedule")
+    async def room_schedule(body: SchedulePayload):
+        ctrl: room_live.RoomLiveController = application.state.room_live
+        try:
+            snap = ctrl.set_schedule(body.class_scheduled, body.vacant_threshold_sec)
+        except room_live.RoomPolicyError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        await ctrl.broadcast({"type": "snapshot", "state": snap})
+        return snap
+
+    @application.post("/api/room/override")
+    async def room_override(body: OverridePayload):
+        ctrl: room_live.RoomLiveController = application.state.room_live
+        snap, cmd = ctrl.set_wall_override(body.active, source="console")
+        if cmd:
+            await ctrl.broadcast(cmd, target_role="phone")
+        await ctrl.broadcast({"type": "snapshot", "state": snap})
+        return snap
+
+    @application.post("/api/room/review")
+    async def room_review(body: LiveReviewPayload):
+        ctrl: room_live.RoomLiveController = application.state.room_live
+        try:
+            snap, cmd = ctrl.review_proposal(body.proposal_id, body.decision, body.role)
+        except room_live.RoomPolicyError as error:
+            await ctrl.broadcast({"type": "snapshot", "state": ctrl.snapshot()})
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        if cmd:
+            await ctrl.broadcast(cmd, target_role="phone")
+        await ctrl.broadcast({"type": "snapshot", "state": snap})
+        return snap
+
+    @application.post("/api/room/reset")
+    async def room_reset():
+        ctrl: room_live.RoomLiveController = application.state.room_live
+        snap, cmd = ctrl.reset()
+        await ctrl.broadcast(cmd, target_role="phone")
+        await ctrl.broadcast({"type": "snapshot", "state": snap})
+        return snap
+
+    @application.websocket("/ws/room-panel")
+    async def ws_room_panel(websocket: WebSocket, role: str = "phone"):
+        ctrl: room_live.RoomLiveController = application.state.room_live
+        client_role = "console" if role == "console" else "phone"
+        await websocket.accept()
+        ctrl.clients[websocket] = client_role
+        snap = ctrl.snapshot()
+        await websocket.send_json({"type": "snapshot", "state": snap})
+        await ctrl.broadcast({"type": "snapshot", "state": snap}, target_role="console")
+        try:
+            while True:
+                msg = await websocket.receive_json()
+                mtype = msg.get("type")
+                if mtype == "ack":
+                    cmd_id = str(msg.get("cmd_id", ""))
+                    devices = msg.get("devices") or {}
+                    updated = ctrl.handle_phone_ack(cmd_id, devices)
+                    await ctrl.broadcast({"type": "snapshot", "state": updated})
+                elif mtype == "wall_override":
+                    active = bool(msg.get("active", False))
+                    updated, cmd = ctrl.set_wall_override(active, source="android-phone")
+                    if cmd:
+                        await ctrl.broadcast(cmd, target_role="phone")
+                    await ctrl.broadcast({"type": "snapshot", "state": updated})
+        except WebSocketDisconnect:
+            pass
+        finally:
+            ctrl.clients.pop(websocket, None)
+            await ctrl.broadcast({"type": "snapshot", "state": ctrl.snapshot()}, target_role="console")
 
     return application
 
