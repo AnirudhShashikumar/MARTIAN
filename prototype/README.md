@@ -52,6 +52,16 @@ Use a fresh browser session at [localhost:8888](http://127.0.0.1:8888/). Set `CA
 
 The fleet map shows the BMSITM Gate A approach, the main bike and car lots, and Bike Zone 2. The parking counters and actions use the smaller synthetic bay set in the incident. Both dashboards read the same incident and decision audit.
 
+### Local resource workflows
+
+Open `/resources?section=labs`, `/resources?section=library`, or `/resources?section=equipment` on the local server. Each tab uses its own sample ledger and decision trace. **Reset demo** restores the resources fixture along with the current incident. Set `CAMPUSFLOW_DB` to a writable path to retain the run across restarts.
+
+1. **Labs.** Use the prefilled 24-person Lab 2 request. The timetable shows why that slot is blocked. Approve the first alternative, then try rescheduling or canceling as the simulated lab coordinator.
+2. **Library seats.** Place a hold on Q10 as `DEMO-01`. Choose `DEMO-02`, enable the waitlist and submit the same window. Advance the demo clock by ten minutes, claim the offer and check in.
+3. **Sports equipment.** Reserve two rackets and confirm pickup. Return one in good condition and report the other damaged. The item ledger shows the second racket under inspection until the sports desk clears it.
+
+Every confirmed effect is rechecked against the latest ledger, written transactionally and verified by SQLite readback. The model, when configured locally, interprets synthetic notes through a read-only tool. You can exercise it from **Interpret a synthetic note** using **Use example**. The form provides the complete workflow offline. Staff roles and sample data simulate campus operations.
+
 ### Optional model intake
 
 Set `GEMINI_API_KEY` and `CAMPUSFLOW_GEMINI_MODEL` in the server environment using a team-approved credential and a Gemini model that supports Interactions API function calling. For example, with the secret already supplied by your environment:
@@ -78,10 +88,10 @@ Use **Run agent** after the note arrives. The server sends the fixed synthetic n
 | Capability | State |
 | --- | --- |
 | Vehicle Fleet Management | Implemented parking overview, a campus parking map, gate ledger and overflow approvals. Class-based assignments, protected capacity, expiry, idempotent exits and transactional readback run on sample data. |
-| College Resource Allocation | Implemented room/device, lab, library-seat and sports-equipment views. Room counts, lab states and library seating are fixtures. One sports kit supports mock checkout and return. |
+| College Resource Allocation | Implemented room/device views and local lab booking, library seats and sports equipment workflows. Synthetic requests support role-aware approval, concurrency checks, SQLite readback and a per-tab trace. |
 | Agent coordination | Implemented evidence, planning, permissioned action, readback, explainability and room recovery. The optional model is limited to selecting an intake tool. |
 | Approval and safety | Implemented independent proposal IDs and version checks. The presenter plays simulated staff roles. Simulated device writes go to SQLite locally and per-browser PostgreSQL state on Vercel. |
-| Current limits | One schedule change and fixed synthetic inputs. Library capacity is a snapshot. Room control covers the one approval and readback sequence. Staff authentication, streaming occupancy, automatic power restoration and live campus integration are future work. |
+| Current limits | The shared incident uses one schedule change. Resource workflows use a synthetic catalog and demo clock. Room control covers the one approval and readback sequence. Staff authentication, automated power restoration and campus integration are future work. |
 
 ## Verify
 

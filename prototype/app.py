@@ -194,8 +194,10 @@ def create_app(room_clock=None, *, hosted=False, database_url=None):
 
     def demo_payload(state):
         return {
-            **state, "model_available": model_allowed and agent.model_enabled(),
+            **{key: value for key, value in state.items() if key != "resources"},
+            "model_available": model_allowed and agent.model_enabled(),
             "note": scenario.NOTE if state["phase"] != "baseline" else None,
+            **({"local_resource_workflows": True} if not hosted else {}),
         }
 
     def read_session_cookie(request):
@@ -259,6 +261,9 @@ def create_app(room_clock=None, *, hosted=False, database_url=None):
             raise HTTPException(status_code=409, detail=str(error)) from error
 
     if not hosted:
+        from prototype.resource_api import register_resource_routes
+
+        register_resource_routes(application)
         register_live_rooms(application)
     application.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 

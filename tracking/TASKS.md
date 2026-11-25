@@ -25,8 +25,15 @@
 - [x] Refine the landing page around the shared incident, license and optimize both photographs, and verify navigation at six viewport sizes.
 - [x] Prepare the Vercel deployment and verify the hosted simulation with PostgreSQL in the local Vercel runtime.
 - [x] Add and test Supabase connection support and row-level security for the session table.
-- [ ] Connect the selected Supabase project to Vercel Production and verify the public demo.
+- [x] Create a dedicated CampusFlow schema and role in the selected Dayflow Supabase project.
+- [ ] Enable the Dayflow role login, save `DATABASE_URL` in Vercel Production, redeploy and verify the public demo.
 - [ ] Implement and prove variable note intake, typed evidence selection and the shared offline fallback.
+- [x] Plan the local Labs, Library seats and Sports equipment workflows and release checks. [Build plan](../strategy/RESOURCE_ALLOCATION_BUILD_PLAN.md)
+- [x] Add shared local resource state and complete the Labs booking and approval flow.
+- [x] Complete Library seat holds, check-in, release, expiry and waitlist offers.
+- [x] Complete Sports equipment reservations, checkout, partial returns and inspection.
+- [x] Verify all three resource tabs offline and exercise the Gemini adapter with test responses.
+- [ ] Verify live Gemini intake for the three resource tabs with a team-approved server key.
 - [ ] Rehearse the independent parking and facilities approval and recovery journey from reset.
 - [ ] Run the paired 12-case evaluation and log correctness, operator input, safety and timing.
 - [ ] Freeze, verify on the presenting laptop, package the requested files and confirm submission receipt.

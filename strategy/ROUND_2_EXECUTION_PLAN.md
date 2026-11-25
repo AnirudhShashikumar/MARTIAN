@@ -12,7 +12,8 @@ The final-round improvement is **evidence choice on unfamiliar wording**. The Ro
 | --- | --- | --- |
 | **P0** | Variable note intake, typed timetable tools, two verified outcomes, independent recovery and a readable audit. | Makes the AI contribution visible and builds on a tested workflow. |
 | **P1** | One separate mock acknowledgment failure after approval, with a visible escalation. | Shows what the system does when a downstream write lacks confirmation. Add it after all P0 gates pass. |
-| **Defer** | More inventory modules, real devices, campus-system connections and infrastructure rewrites. | The existing two tabs cover the scope judges need to see. Any future deployment requires separate authorization and operational validation. |
+| **Final local build** | Working Labs, Library seats and Sports equipment workflows under College Resource Allocation. | Start with Labs to reinforce the main incident. Use Library and Sports as independent demos of the same approval and verification flow. [Resource allocation build plan](RESOURCE_ALLOCATION_BUILD_PLAN.md) |
+| **Defer** | Additional resource categories, new devices, campus-system connections and infrastructure rewrites. | Keep the final build focused on the synthetic demo and its verified workflows. |
 
 ## Time and ownership
 

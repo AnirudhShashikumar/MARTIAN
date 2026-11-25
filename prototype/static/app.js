@@ -21,7 +21,10 @@ const workspace = {
     sections: [["rooms", "Rooms & devices"], ["labs", "Labs"], ["library", "Library seats"], ["equipment", "Sports equipment"]],
   },
 }[view];
-let section = workspace.sections[0][0];
+const resourceTabs = new Set(["labs", "library", "equipment"]);
+const linkedSection = new URLSearchParams(window.location.search).get("section");
+let section = view === "resources" && resourceTabs.has(linkedSection) ? linkedSection : workspace.sections[0][0];
+let resourceWorkspace;
 
 function escape(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -403,7 +406,40 @@ function renderSection() {
     if (tab.dataset.section === section) tab.setAttribute("aria-current", "true");
     else tab.removeAttribute("aria-current");
   });
-  $("#operation").innerHTML = renderSections[section]();
+  const operation = $("#operation");
+  const localResource = state.local_resource_workflows && view === "resources" && resourceTabs.has(section);
+  const grid = operation.parentElement;
+  grid.classList.toggle("resource-workspace-mode", Boolean(localResource));
+  if (localResource) {
+    const selected = section;
+    const runId = state.id;
+    operation.dataset.resourceMode = selected;
+    if (resourceWorkspace) {
+      resourceWorkspace.mount(operation, selected, runId);
+      return;
+    }
+    operation.innerHTML = '<p class="panel" role="status">Loading resource workspace…</p>';
+    import("/static/resource-workspace.js").then((module) => {
+      resourceWorkspace = module;
+      if (section === selected && state.id === runId) module.mount(operation, selected, runId);
+    }).catch(() => {
+      if (section === selected && state.id === runId) {
+        operation.innerHTML = '<p class="error" role="alert">The resource workspace could not load. Refresh this page.</p>';
+      }
+    });
+    return;
+  }
+  delete operation.dataset.resourceMode;
+  resourceWorkspace?.unmount(operation);
+  operation.innerHTML = renderSections[section]();
+}
+
+function updateResourceLink() {
+  if (view !== "resources" || !state.local_resource_workflows) return;
+  const url = new URL(window.location.href);
+  if (resourceTabs.has(section)) url.searchParams.set("section", section);
+  else url.searchParams.delete("section");
+  history.replaceState(history.state, "", url);
 }
 
 function render() {
@@ -445,6 +481,7 @@ async function execute(name, key) {
     });
     if (name === "reset") {
       section = workspace.sections[0][0];
+      updateResourceLink();
     }
     $("#announcements").textContent = state.audit.at(-1)?.title ?? "Demo reset.";
   } catch (error) {
@@ -467,6 +504,7 @@ document.addEventListener("click", (event) => {
   if (!button || !state) return;
   if (button.dataset.section) {
     section = button.dataset.section;
+    updateResourceLink();
     renderSection();
     $("#subtabs [aria-current]").focus({ preventScroll: true });
     return;
