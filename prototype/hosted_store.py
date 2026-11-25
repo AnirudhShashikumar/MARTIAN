@@ -34,7 +34,7 @@ class PostgresStore:
     @contextmanager
     def connection(self):
         if not self.database_url:
-            raise StorageUnavailable("Set DATABASE_URL to enable the hosted simulation.")
+            raise StorageUnavailable("Set DATABASE_URL or POSTGRES_URL to enable the hosted simulation.")
         try:
             with psycopg.connect(self.database_url, connect_timeout=5, prepare_threshold=None) as db:
                 db.execute("SET LOCAL statement_timeout = '5s'")
@@ -60,6 +60,8 @@ class PostgresStore:
                         expires_at timestamptz NOT NULL
                     )
                 """)
+                # The Supabase Data API must not expose the server's session table.
+                db.execute("ALTER TABLE campusflow_demo_sessions ENABLE ROW LEVEL SECURITY")
                 db.execute("""
                     CREATE INDEX IF NOT EXISTS campusflow_demo_expiry
                     ON campusflow_demo_sessions (expires_at)

@@ -68,6 +68,18 @@ class HostedPostgresTest(HostedClients):
         self.assertEqual(result.status_code, 200, result.text)
         return result.json()
 
+    def test_supabase_environment_and_row_security(self):
+        import psycopg
+
+        with patch.dict(os.environ, {"DATABASE_URL": "", "POSTGRES_URL": DATABASE_URL}):
+            response = self.client(database_url=None).get("/api/health")
+        self.assertEqual(response.status_code, 200, response.text)
+        with psycopg.connect(DATABASE_URL) as db:
+            enabled, = db.execute("""
+                SELECT relrowsecurity FROM pg_class WHERE oid = 'campusflow_demo_sessions'::regclass
+            """).fetchone()
+        self.assertTrue(enabled)
+
     @staticmethod
     def approval(state, branch):
         return {"branch": branch, "role": scenario.ROLES[branch], "decision": "approve",

@@ -24,6 +24,8 @@
 - [x] Use the supplied BMSITM parking layout in Fleet and verify the offline cross-dashboard workflow.
 - [x] Refine the landing page around the shared incident, license and optimize both photographs, and verify navigation at six viewport sizes.
 - [x] Prepare the Vercel deployment and verify the hosted simulation with PostgreSQL in the local Vercel runtime.
+- [x] Add and test Supabase connection support and row-level security for the session table.
+- [ ] Connect the selected Supabase project to Vercel Production and verify the public demo.
 - [ ] Implement and prove variable note intake, typed evidence selection and the shared offline fallback.
 - [ ] Rehearse the independent parking and facilities approval and recovery journey from reset.
 - [ ] Run the paired 12-case evaluation and log correctness, operator input, safety and timing.

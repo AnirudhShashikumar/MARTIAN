@@ -172,7 +172,9 @@ def create_app(room_clock=None, *, hosted=False, database_url=None):
     if hosted:
         from prototype.hosted_store import PostgresStore, SESSION_SECONDS, StorageUnavailable
 
-        hosted_store = PostgresStore(os.environ.get("DATABASE_URL") if database_url is None else database_url)
+        if database_url is None:
+            database_url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+        hosted_store = PostgresStore(database_url)
 
         @application.exception_handler(StorageUnavailable)
         async def storage_unavailable(_request, error):

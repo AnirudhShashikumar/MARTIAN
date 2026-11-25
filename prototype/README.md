@@ -20,10 +20,12 @@ Start a fresh server after changing FastAPI routes. If port 8765 is already occu
 ## Deploy on Vercel
 
 1. Import this Git repository into Vercel and set the **Root Directory** to the repository root. The configuration uses the FastAPI preset, Python 3.12, and `server.py`. Leave the build, install and output overrides at their defaults. [FastAPI on Vercel](https://vercel.com/docs/frameworks/backend/fastapi)
-2. Connect a PostgreSQL database, such as Neon through Vercel Storage. Set a pooled TLS connection string as `DATABASE_URL` for each environment you deploy. Use a separate preview database or branch. The database role needs permission to create CampusFlow’s session table and index on first use. [Neon Vercel integration](https://neon.com/docs/guides/vercel-managed-integration)
+2. Connect a dedicated Supabase PostgreSQL database through Vercel Storage. CampusFlow accepts the integration’s `POSTGRES_URL` and gives an explicit `DATABASE_URL` precedence. For a manual connection, save the Supabase **transaction pooler** URI with TLS as a server-side `DATABASE_URL` secret. Use a separate preview database or branch. The database role must own CampusFlow’s session table so it can create the table, index and row-level security on first use. [Supabase Vercel integration](https://supabase.com/docs/guides/integrations/vercel-marketplace) · [Supabase connection strings](https://supabase.com/docs/guides/database/connecting-to-postgres)
 3. Deploy a Preview and check `/api/health` for `{"status":"ok"}`. Open the landing page and complete the parking and room approval flow across both dashboards. Open a private browser window to confirm that it starts with a separate run. Promote the preview after the checks pass.
 
 The hosted demo stores synthetic state and audit events in PostgreSQL. The browser keeps an HTTP-only HTTPS session cookie. Each session lasts 24 hours. Expired sessions are removed as new sessions start. The local Uvicorn demo uses its existing SQLite store.
+
+After changing Vercel environment variables, redeploy the affected environment. The public health endpoint reports HTTP 503 until a deployment has a working connection. [Vercel environment variables](https://vercel.com/docs/environment-variables/managing-environment-variables)
 
 The live AMB82 serial bridge, Android WebSocket panel, and classroom console run on the private local server. The hosted room URLs link visitors to the simulated facilities dashboard.
 
