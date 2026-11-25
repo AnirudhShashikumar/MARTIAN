@@ -1,0 +1,21 @@
+# Rules and constraints
+
+| Rulebook | Confirmed requirements |
+| --- | --- |
+| §§1–4 · Eligibility and attendance | Participation accepts official instructions. Registered participants only, one team per person, prior approval for team changes, valid college or event ID. Remain on site and follow attendance procedures. Obtain authorized permission before leaving and follow exit and return procedures. Unauthorized absence or exit risks disqualification. Organizers may revise schedules and venue arrangements, and their safety, discipline and eligibility decisions are final. |
+| §§5–8 · Originality and tools | Develop original team work at the event. Substantially pre-built, copied, previously submitted or misrepresented projects risk rejection or disqualification. Commercial components are allowed unless prohibited. Follow IP, privacy, licensing and attribution requirements. Use an assigned or approved statement and get organizer approval for any change. Perform core hardware integration, implementation and testing at the event, with meaningful contributions from all members. Assistive AI is allowed unless restricted. Participants remain responsible for accuracy, originality, safety and legality and must explain their code, hardware and design. |
+| §§9–10 · Submission and judging | Meet the official deadline and deliverable requirements. Possible items include prototype, code, documentation, diagrams and presentation. Late submissions require express permission. Provide truthful details, show the working prototype when requested, answer technical and safety questions, follow the official rubric and avoid interference with judging. |
+| §§11–13 · Conduct, venue and network | Treat participants and staff respectfully. Harassment, threats, cheating and sabotage are prohibited. Follow designated-area and venue-safety instructions, keep the workspace orderly and report violations promptly. Use the network responsibly. Unauthorized access, attacks and interference are prohibited. Security testing is limited to explicitly authorized systems and scope. |
+| §§14–19 · Logistics and enforcement | Secure personal belongings. Arrange and pay for travel and accommodation unless organizers announce provisions. Event photography or recording may occur. Raise confidentiality concerns before a public demo. Participants accept the rules. Violations may trigger warnings, removal, disqualification or escalation. |
+
+Team execution gates are general preparation before statement intake and analysis after intake. The Round 1 rubric introduces a working PoC requirement while the schedule places prototype development after shortlisting. Obtain organizer confirmation of the coding window and statement approval before implementation, as well as user approval. Use evidence for performance claims and identify simulated inputs or fallback recordings in the demo. [Rubric details](JUDGING_CRITERIA.md)
+
+[Official rulebook, pp. 1–2](../references/official/MARTIAN_1.0_Rulebook_mars.pdf) · [Event flow, p. 1](../references/official/MARTIAN_1.0_Event_Flow.pdf)
+
+## Problem statement domain rules
+
+- **Both domains.** Build with team-created fake or sample data and keep decision records. The organizers provide no data, apps or starter code. Declare open-source tools, libraries and models in the submission, protect keys and create the core idea and implementation at the event. Both Open Innovation tracks require the organizers to approve the statement before work begins.
+- **Security.** Use an isolated, team-owned lab and simulated threat behavior against the team’s own build. Real campus or third-party systems, real personal data and real malware are prohibited. Risky actions must allow human review or approval. Be ready to show lab isolation and demonstrate that untrusted inputs cannot easily mislead the agent.
+- **Management.** Use sample data only, with no connections to real college systems, bank, UPI or payment accounts. Payments must be simulated or sandboxed. Escalate unclear or sensitive cases to a human, explain decisions, protect privacy and apply policies fairly.
+
+[Official problem statement rules, pp. 2 and 4](../references/official/MARTIAN_1.0_Problem_Statements_Open_Innovation.pdf)
