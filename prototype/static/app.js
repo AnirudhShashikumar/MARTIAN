@@ -25,6 +25,25 @@ const resourceTabs = new Set(["labs", "library", "equipment"]);
 const linkedSection = new URLSearchParams(window.location.search).get("section");
 let section = view === "resources" && resourceTabs.has(linkedSection) ? linkedSection : workspace.sections[0][0];
 let resourceWorkspace;
+let cctv = {
+  active: false,
+  connecting: false,
+  has_frame: false,
+  source: "http://10.110.18.80:4747/video",
+  backend: "idle",
+  state: "EMPTY",
+  person_count: 0,
+  confidence: 0,
+  hold_remaining: 0,
+  fps: 0,
+  infer_ms: 0,
+  devices: { Lights: "Off", Fans: "Off", Projector: "Off" },
+  status_message: "CCTV inactive — click Initialize CCTV Cam to start Phone 1 DroidCam.",
+  error: null,
+};
+let cctvBusy = false;
+let cctvPollTimer = null;
+let cctvStreamToken = 0;
 
 function escape(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -206,31 +225,177 @@ function overflowPanel() {
   </section>`;
 }
 
+function cctvBannerClass() {
+  if (!cctv.active) return "idle";
+  if (!cctv.has_frame) return "connecting";
+  return cctv.state === "OCCUPIED" ? "occupied" : "empty";
+}
+
+function cctvBannerMeta() {
+  if (!cctv.active) return "Phone 1 DroidCam stream + YOLOv8n person detection (RAM-only, no video saved)";
+  if (cctv.error) return `Stream notice: ${cctv.error}`;
+  if (!cctv.has_frame) return `Connecting to ${cctv.source}…`;
+  return `${cctv.person_count} ${cctv.person_count === 1 ? "person" : "people"} in frame · YOLOv8n ${cctv.infer_ms} ms · ${cctv.fps} FPS`;
+}
+
+function syncCctvDom() {
+  const banner = $("#cctv-banner");
+  if (!banner) return;
+  banner.className = `cctv-banner ${cctvBannerClass()}`;
+  const msgEl = $("#cctv-msg");
+  const metaEl = $("#cctv-meta");
+  const countEl = $("#cctv-count");
+  const presenceEl = $("#cctv-presence");
+  const meterBox = $("#cctv-meter-box");
+  if (msgEl) msgEl.textContent = cctv.status_message;
+  if (metaEl) metaEl.textContent = cctvBannerMeta();
+
+  if (cctv.active) {
+    if (countEl) countEl.textContent = cctv.has_frame ? String(cctv.person_count) : "…";
+    if (presenceEl) {
+      presenceEl.textContent = cctv.has_frame
+        ? `${cctv.person_count} ${cctv.person_count === 1 ? "person" : "people"} detected (live CCTV)`
+        : "Connecting to DroidCam…";
+    }
+    if (meterBox) meterBox.classList.toggle("attention", cctv.has_frame && cctv.person_count > 0);
+
+    Object.entries(cctv.devices).forEach(([name, val]) => {
+      const card = document.querySelector(`[data-device-card="${name}"]`);
+      if (!card) return;
+      card.classList.toggle("confirmed", val !== "On");
+      const strong = card.querySelector("strong");
+      const small = card.querySelector("small");
+      if (strong) strong.textContent = val;
+      if (small) small.textContent = "Live CCTV vision";
+    });
+  }
+}
+
+function stopCctvPolling() {
+  if (cctvPollTimer) {
+    clearInterval(cctvPollTimer);
+    cctvPollTimer = null;
+  }
+}
+
+function startCctvPolling() {
+  stopCctvPolling();
+  if (!cctv.active || view !== "resources" || section !== "rooms") return;
+  cctvPollTimer = setInterval(async () => {
+    if (!cctv.active || view !== "resources" || section !== "rooms") {
+      stopCctvPolling();
+      return;
+    }
+    try {
+      const latest = await api("/api/cctv/status");
+      const activeChanged = latest.active !== cctv.active;
+      cctv = { ...cctv, ...latest };
+      if (activeChanged) renderSection();
+      else syncCctvDom();
+    } catch {
+      // ignore transient poll hiccup
+    }
+  }, 500);
+}
+
+async function handleCctvAction(mode) {
+  if (cctvBusy) return;
+  const input = $("#cctv-source");
+  if (input && input.value.trim()) cctv.source = input.value.trim();
+  cctvBusy = true;
+  notify();
+  renderSection();
+  try {
+    if (mode === "start") {
+      cctv = await api("/api/cctv/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: cctv.source, hold_seconds: 3.0 }),
+      });
+      cctvStreamToken = Date.now();
+      $("#announcements").textContent = "Classroom CCTV initialized.";
+    } else {
+      stopCctvPolling();
+      cctv = await api("/api/cctv/stop", { method: "POST" });
+      $("#announcements").textContent = "Classroom CCTV disabled.";
+    }
+  } catch (error) {
+    notify(error.message || "Could not update CCTV camera state.");
+  } finally {
+    cctvBusy = false;
+    renderSection();
+    if (cctv.active) startCctvPolling();
+  }
+}
+
 function roomsPanel() {
   const room = state.room;
   const last = room.samples[room.samples.length - 1];
   const roomStatus = state.branches.room.status;
   const old = last !== undefined && state.clock - last.at > 12;
+  const liveCctv = Boolean(state.local_resource_workflows && cctv.active);
+
   let presence = "Occupancy awaiting scenario";
-  if (last) presence = old ? "Occupancy feed stale" : `${last.count} ${last.count === 1 ? "person" : "people"} detected`;
-  const devices = Object.entries(room.devices).map(([name, status]) =>
-    `<div class="device ${status === "On" ? "" : "confirmed"}"><span>${escape(name)}</span>
+  let meterVal = "—";
+  let meterAttention = false;
+  if (liveCctv) {
+    meterVal = cctv.has_frame ? String(cctv.person_count) : "…";
+    presence = cctv.has_frame
+      ? `${cctv.person_count} ${cctv.person_count === 1 ? "person" : "people"} detected (live CCTV)`
+      : "Connecting to DroidCam…";
+    meterAttention = cctv.has_frame && cctv.person_count > 0;
+  } else if (last) {
+    meterVal = !old ? String(last.count) : "—";
+    presence = old ? "Occupancy feed stale" : `${last.count} ${last.count === 1 ? "person" : "people"} detected`;
+    meterAttention = old || Boolean(last.count);
+  }
+
+  const activeDevices = liveCctv ? cctv.devices : room.devices;
+  const devices = Object.entries(activeDevices).map(([name, status]) =>
+    `<div class="device ${status === "On" ? "" : "confirmed"}" data-device-card="${escape(name)}"><span>${escape(name)}</span>
        <strong>${escape(status)}</strong>
-       <small>${roomStatus === "verified" ? "Mock readback" : "Simulated state"}</small></div>`
+       <small>${liveCctv ? "Live CCTV vision" : (roomStatus === "verified" ? "Mock readback" : "Simulated state")}</small></div>`
   ).join("");
+
+  const cctvControls = state.local_resource_workflows ? `
+    <div class="cctv-bar">
+      <label class="cctv-field">
+        <span>Phone 1 DroidCam URL (or <code>0</code> for laptop webcam)</span>
+        <input id="cctv-source" type="text" value="${escape(cctv.source)}" ${cctv.active || cctvBusy ? "disabled" : ""} placeholder="http://10.110.18.80:4747/video">
+      </label>
+      <div class="cctv-actions">
+        ${cctv.active
+          ? `<button type="button" class="button secondary cctv-stop" data-cctv="stop" ${cctvBusy ? "disabled" : ""}>Disable CCTV</button>`
+          : `<button type="button" class="button primary" data-cctv="start" ${cctvBusy ? "disabled" : ""}>${cctvBusy ? "Starting…" : "Initialize CCTV Cam"}</button>`}
+      </div>
+    </div>` : "";
+
+  const mediaBlock = liveCctv ? `
+    <div class="cctv-stage">
+      <figure class="overview-media cctv-media">
+        <img id="cctv-feed" src="/api/cctv/stream?t=${cctvStreamToken}" alt="Live Classroom C-101 CCTV stream with YOLOv8 person bounding boxes">
+        <figcaption class="media-caption">Live Phone 1 DroidCam · YOLOv8n bounding boxes</figcaption>
+      </figure>
+      <div id="cctv-banner" class="cctv-banner ${cctvBannerClass()}" role="status" aria-live="polite">
+        <strong id="cctv-msg">${escape(cctv.status_message)}</strong>
+        <span id="cctv-meta">${escape(cctvBannerMeta())}</span>
+      </div>
+    </div>` : `
+    <figure class="overview-media">
+      <img src="/static/resource-library.webp" width="1280" height="720" alt="">
+      <figcaption class="media-caption">Illustrative campus interior · click Initialize CCTV Cam for live feed</figcaption>
+    </figure>`;
 
   return `<section class="panel">
     <div class="panel-head"><div><h2>Classroom C-101</h2>
-       <p>${last ? `Synthetic occupancy · last sample ${clock(last.at)}` : "Original location · device state simulated"}</p></div>
-       ${badge(stages[roomStatus], roomStatus)}</div>
-    <div class="overview-layout">
-      <figure class="overview-media">
-        <img src="/static/resource-library.webp" width="1280" height="720" alt="">
-        <figcaption class="media-caption">Illustrative campus interior</figcaption>
-      </figure>
+       <p>${liveCctv ? `Live DroidCam CCTV · YOLOv8n person detection` : (last ? `Synthetic occupancy · last sample ${clock(last.at)}` : "Original location · device state simulated")}</p></div>
+       ${liveCctv ? badge(cctv.state === "OCCUPIED" ? "Live · Occupied" : "Live · Empty", cctv.state === "OCCUPIED" ? "verified" : "idle") : badge(stages[roomStatus], roomStatus)}</div>
+    ${cctvControls}
+    <div class="overview-layout ${liveCctv ? "cctv-active-layout" : ""}">
+      ${mediaBlock}
       <div class="meter-stage">
-        <div class="room-meter ${old || last?.count ? "attention" : ""}">
-          <div><strong>${last && !old ? escape(last.count) : "—"}</strong><span>${presence}</span></div>
+        <div id="cctv-meter-box" class="room-meter ${meterAttention ? "attention" : ""}">
+          <div><strong id="cctv-count">${escape(meterVal)}</strong><span id="cctv-presence">${presence}</span></div>
         </div>
         <div class="room-evidence">
           <span class="evidence">${room.booking ? "Booking active" : "Calendar clear"}</span>
@@ -432,6 +597,8 @@ function renderSection() {
   delete operation.dataset.resourceMode;
   resourceWorkspace?.unmount(operation);
   operation.innerHTML = renderSections[section]();
+  if (view === "resources" && section === "rooms" && cctv.active) startCctvPolling();
+  else stopCctvPolling();
 }
 
 function updateResourceLink() {
@@ -509,6 +676,11 @@ document.addEventListener("click", (event) => {
     $("#subtabs [aria-current]").focus({ preventScroll: true });
     return;
   }
+  const cctvAction = button.dataset.cctv;
+  if (cctvAction) {
+    handleCctvAction(cctvAction);
+    return;
+  }
   const name = button.dataset.action;
   if (name === "audit") {
     renderAudit();
@@ -524,6 +696,15 @@ async function loadState() {
     const latest = await api("/api/state");
     if (busy || state !== previousState) return;
     state = latest;
+    if (state.local_resource_workflows && view === "resources") {
+      try {
+        const live = await api("/api/cctv/status");
+        cctv = { ...cctv, ...live };
+        if (cctv.active && !cctvStreamToken) cctvStreamToken = Date.now();
+      } catch {
+        // ignore if CCTV unavailable
+      }
+    }
     notify();
     render();
   } catch (error) {

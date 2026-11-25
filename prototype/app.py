@@ -12,11 +12,11 @@ from tempfile import TemporaryDirectory
 from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict
 
-from prototype import agent, scenario
+from prototype import agent, cctv_stream, scenario
 
 
 mimetypes.add_type("image/webp", ".webp")
@@ -121,7 +121,13 @@ class Command(BaseModel):
     decision: Optional[Literal["approve", "reject"]] = None
 
 
-def create_app(*, hosted=False, database_url=None):
+class CctvStartPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source: str = cctv_stream.DEFAULT_DROIDCAM_URL
+    hold_seconds: float = 3.0
+
+
+def create_app(*, hosted=False, database_url=None, cctv_engine=None):
     @asynccontextmanager
     async def lifespan(application):
         if hosted:
@@ -132,7 +138,11 @@ def create_app(*, hosted=False, database_url=None):
             path = Path(configured) if configured else Path(scratch) / "demo.sqlite3"
             application.state.store = Store(path)
             application.state.store.initialize()
-            yield
+            application.state.cctv = cctv_engine if cctv_engine is not None else cctv_stream.ClassroomCCTVEngine()
+            try:
+                yield
+            finally:
+                application.state.cctv.stop()
 
     application = FastAPI(title="CampusFlow", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     if not hosted:
@@ -232,9 +242,38 @@ def create_app(*, hosted=False, database_url=None):
         from prototype.resource_api import register_resource_routes
 
         register_resource_routes(application)
+        register_cctv_routes(application)
     application.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
     return application
+
+
+def register_cctv_routes(application):
+    @application.get("/api/cctv/status")
+    def cctv_status():
+        return application.state.cctv.status()
+
+    @application.post("/api/cctv/start")
+    def cctv_start(body: CctvStartPayload):
+        try:
+            return application.state.cctv.start(source=body.source, hold_seconds=body.hold_seconds)
+        except RuntimeError as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
+
+    @application.post("/api/cctv/stop")
+    def cctv_stop():
+        return application.state.cctv.stop()
+
+    @application.get("/api/cctv/stream")
+    def cctv_stream_endpoint():
+        engine = application.state.cctv
+        if not engine.status()["active"]:
+            raise HTTPException(status_code=409, detail="CCTV is not active. Click Initialize CCTV Cam first.")
+        return StreamingResponse(
+            engine.mjpeg_frames(),
+            media_type="multipart/x-mixed-replace; boundary=frame",
+            headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
+        )
 
 
 app = create_app()
