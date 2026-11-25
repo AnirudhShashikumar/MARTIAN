@@ -246,22 +246,42 @@ def lab_options(data, request):
 
 
 def seat_options(data, request):
-    if has_seat(data, request):
-        return [], "This requester already has an overlapping seat."
+    previous, blocked = seat_transfer(data, request)
+    if blocked:
+        return [], blocked
     eligible = [
         seat["id"] for seat in SEATS
         if seat["zone"] == request["target"] and seat["protected"] == request["protected"]
         and not conflicts(data, request, seat["id"])
     ]
-    return [option([asset], request) for asset in eligible[:3]], None
+    choices = [option([asset], request) for asset in eligible[:3]]
+    if previous:
+        for choice in choices:
+            choice["releases_seat"] = previous["id"]
+    return choices, None
 
 
-def has_seat(data, request):
-    return any(
-        other["id"] != request.get("id") and other["requester"] == request.get("requester")
-        and other["status"] in ACTIVE_SEATS and overlaps(other, request)
+def seat_transfer(data, request):
+    existing = [
+        other
         for other in requests(data, "library")
-    )
+        if other["id"] != request.get("id") and other["requester"] == request.get("requester")
+        and other["status"] in ACTIVE_SEATS and overlaps(other, request)
+    ]
+    if not existing:
+        return None, None
+
+    previous = existing[0]
+    if (len(existing) == 1 and request["protected"] and not previous["protected"]
+            and request["start"] <= max(previous["start"], data["clock"])
+            and request["end"] >= previous["end"]):
+        return previous, None
+    return None, "This requester already has an overlapping seat. Choose another window or release that seat."
+
+
+def release_for_protected_seat(data, previous, role=None):
+    previous.update(status="released", reason="Released when the requester moved to a protected seat.")
+    event(data, previous, "Act", "General seat released", previous["reason"], role)
 
 
 def stock_options(data, request):
@@ -305,6 +325,9 @@ def stage(data, request):
         "library": "Matched zone, eligibility and an unclaimed seat window.",
         "equipment": "Matched type, quantity, condition and open stock windows.",
     }[request["tab"]]
+    if previous_id := choices[0].get("releases_seat"):
+        seat = data["requests"][previous_id]["assets"][0]
+        request["reason"] = f"Approval will assign a protected seat and release {seat} in the same step."
     request["proposal"] = {
         "id": identifier(), "revision": data["revision"], "expires": data["clock"] + HOLD_MINUTES,
         "role": role_for(request), "choices": choices,
@@ -315,8 +338,10 @@ def stage(data, request):
 def queue(data, request):
     require(request["tab"] in {"library", "equipment"} and request["status"] == "unavailable",
             "Only unavailable seat or equipment requests can join the waitlist.")
-    require(request["tab"] != "library" or not has_seat(data, request),
-            "Release the overlapping seat before joining the waitlist.")
+    previous = None
+    if request["tab"] == "library":
+        previous, blocked = seat_transfer(data, request)
+        require(not blocked, blocked)
     require(not any(other["status"] == "queued" and other["requester"] == request["requester"]
                     and other["target"] == request["target"] and overlaps(other, request)
                     for other in requests(data, request["tab"])),
@@ -324,6 +349,8 @@ def queue(data, request):
     request["status"] = "queued"
     request["queued_at"] = len(data["audit"])
     request["reason"] = "Waiting in submission order for the first eligible allocation."
+    if previous:
+        request["reason"] += f" The agent will release {previous['assets'][0]} when it assigns a protected seat."
     event(data, request, "Adapt", "Waitlist joined", request["reason"])
 
 
@@ -370,7 +397,7 @@ def submit(data, command):
     event(data, request, "Understand", f"{mode} intake",
           f"Confirmed request fields against the {SOURCES[command.tab].lower()}.")
     stage(data, request)
-    queue_eligible = command.tab == "equipment" or (command.tab == "library" and not has_seat(data, request))
+    queue_eligible = command.tab == "equipment" or (command.tab == "library" and not seat_transfer(data, request)[1])
     if request["status"] == "unavailable" and command.waitlist and queue_eligible:
         queue(data, request)
     return request_id
@@ -393,14 +420,18 @@ def assign(data, request, choice, status):
 def check_choice(data, request, choice):
     window = {**request, **{key: choice[key] for key in ("start", "end")}}
     require(data["clock"] <= window["start"], "This slot has started. Choose a new window.")
+    previous = None
     if request["tab"] == "labs":
         lab = next(lab for lab in LABS if lab["id"] == choice["assets"][0])
         available = not lab_reason(data, window, lab)
     else:
         available = all(not conflicts(data, window, asset) for asset in choice["assets"])
         if request["tab"] == "library":
-            available = available and not has_seat(data, window)
+            previous, blocked = seat_transfer(data, window)
+            available = (available and not blocked
+                         and (previous["id"] if previous else None) == choice.get("releases_seat"))
     require(available, "Availability changed. Refresh this request to get a new proposal.")
+    return previous
 
 
 def review(data, command):
@@ -426,9 +457,11 @@ def review(data, command):
     if request["replaces"]:
         old = data["requests"].get(request["replaces"])
         require(old and old["status"] == "booked", "The original booking changed. Refresh the schedule.")
-    check_choice(data, request, choice)
+    previous_seat = check_choice(data, request, choice)
     if request["replaces"]:
         old.update(status="rescheduled", reason="Replaced by the newly approved booking.")
+    if previous_seat:
+        release_for_protected_seat(data, previous_seat, command.role)
     status = {"labs": "booked", "library": "held", "equipment": "reserved"}[request["tab"]]
     assign(data, request, choice, status)
     event(data, request, "Act", {"booked": "Lab booked", "held": "Seat held", "reserved": "Items reserved"}[status],
@@ -441,7 +474,7 @@ def seat_transition(data, request, action):
         require(request["status"] == "offered", "There is no active offer to claim.")
         request["status"] = "held"
     elif action == "check_in":
-        require(request["status"] == "held" and request["start"] <= data["clock"] < request["hold_until"],
+        require(request["status"] in {"held", "offered"} and request["start"] <= data["clock"] < request["hold_until"],
                 "Check in during your active hold window.")
         request["status"] = "checked_in"
     else:
@@ -559,13 +592,38 @@ def expire_and_offer(data):
         (request for request in data["requests"].values() if request["status"] == "queued"),
         key=lambda request: request["queued_at"],
     )
+    allocate_library_waitlist(data, [request for request in queued if request["tab"] == "library"])
     for request in queued:
+        if request["tab"] != "equipment":
+            continue
         window = {**request, "start": max(request["start"], data["clock"])}
         choices, _ = FIND_OPTIONS[request["tab"]](data, window)
         if choices:
             assign(data, request, choices[0], "offered")
             request["reason"] = "The first eligible waitlisted request received this offer."
             event(data, request, "Adapt", "Waitlist offer ready", f"{', '.join(request['assets'])} · {request['reason']}")
+
+
+def allocate_library_waitlist(data, queued):
+    # Restart in FIFO order after an assignment, since a protected-seat switch can free a general seat.
+    while queued:
+        for index, request in enumerate(queued):
+            window = {**request, "start": max(request["start"], data["clock"])}
+            choices, _ = seat_options(data, window)
+            if not choices:
+                continue
+            choice = choices[0]
+            if previous_id := choice.get("releases_seat"):
+                release_for_protected_seat(data, data["requests"][previous_id], "CampusFlow agent")
+            assign(data, request, choice, "held")
+            request["reason"] = "Automatically assigned to the first eligible requester on the waitlist."
+            event(data, request, "Adapt", "Waitlist seat assigned", f"{request['assets'][0]} · {request['reason']}",
+                  "CampusFlow agent")
+            event(data, request, "Verify", "Assigned seat read back", f"{request['assets'][0]} held for {request['requester']}.")
+            queued.pop(index)
+            break
+        else:
+            break
 
 
 def apply(data, command):
