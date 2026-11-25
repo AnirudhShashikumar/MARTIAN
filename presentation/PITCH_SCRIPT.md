@@ -2,7 +2,7 @@
 
 **10-second hook.** “A lab session moves and runs late. Visiting cars reach a full lot, and the classroom it left behind is still powered.”
 
-**30-second elevator pitch.** “One late timetable change gives parking and facilities two decisions to make. CampusFlow reads the staff note, verifies the revised session, and proposes a time-limited overflow bay and a separate room check. Parking staff approve the allocation. If someone returns to the room, the system blocks the power action until the evidence is fresh again. Each action has an approval, a verified outcome and a reason.”
+**30-second elevator pitch.** “CampusFlow responds to a late timetable change in two tabs. Vehicle Fleet Management allocates car and bike spaces and proposes overflow for parking staff approval. College Resource Allocation checks the former room’s synthetic occupancy and holds any power action if someone returns. One agent verifies the revised session and its consequences, while each team approves its own action. Both outcomes appear in the same audit.”
 
 **Value proposition.** One late schedule change, two verified campus decisions.
 
@@ -26,4 +26,4 @@
 | 6 · Build sequence and fallback | 15s | 2:55 |
 | 7 · Close | 5s | 3:00 |
 
-Rehearse to 2:50 where possible for handoffs and switching. Use the slide-specific prompts in the [PPT information document](SLIDE_CONTENT.md). The official rubric then allots 3 minutes to Q&A. If the live flow is authorized and ready, reset the synthetic fixture before the walkthrough. If it is unavailable, explain the planned sequence without claiming a working implementation. Label recorded, manual and synthetic inputs clearly. Keep an authorized fallback route.
+Rehearse to 2:50 where possible for handoffs and switching. Use the slide-specific prompts in the [PPT information document](SLIDE_CONTENT.md). The official rubric then allots 3 minutes to Q&A. Reset the synthetic fixture before the walkthrough and use the [verified demo sequence](DEMO_STORYBOARD.md). Say which intake mode you use and show the fallback captures if the app is unavailable.

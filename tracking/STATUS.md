@@ -2,16 +2,16 @@
 
 | Field | State |
 | --- | --- |
-| Phase | **ROUND 1 · DECISION AND PPT CONTENT READY** |
+| Phase | **ROUND 1 · CAMPUSFLOW PROTOTYPE VERIFIED** |
 | Confirmed track | **Management Track 4 · Open Innovation**, Agentic AI for Campus Wellness. |
-| Proposed statement | **Coordinating Campus Parking and Shared Resources During Demand Changes**. Recommend **CampusFlow C**, focused on a late schedule change with two verified responses. Team acceptance and organizer approval pending. |
+| Selected statement | **Coordinating Campus Parking and Shared Resources During Demand Changes**. **CampusFlow C**, focused on a late schedule change with two verified responses. Team reports organizer approval and permission to begin coding before Checkpoint Alpha. |
 | Current objective | Secure one of the 10 Round 2 places by presenting an original, defensible and buildable agentic campus workflow. |
 | Remaining time | See the timestamped estimate below. |
-| Completed | Scored the candidate variants, reviewed the top three and prepared all seven template slides' copy, architecture, timed pitch, demo scenario and judge defense. |
-| Pending decisions | Statement acceptance, organizer approval and Round 1 PoC permission and start time, verified roster and lead fields, team slot, submission channel and deadline, and Day 2 close. |
-| Critical risks | Rubric assigns 25% and top tie-break to working PoC despite the earlier PPT-only plan and scheduled prototype slot. Keep the demo to one schedule change. Protect against unreliable occupancy inputs. |
-| Next action | Approve CampusFlow C. Seek organizer statement approval and confirm the authorized PoC window. Prepare the deck from the information document once approved. |
+| Completed | Built and verified the local two-tab prototype, all seven subtabs and the primary recovery scenario. Captured seven 16:9 screenshots and four slide graphics. Prepared the timed walkthrough, architecture and fallback. |
+| Pending decisions | Verified roster and lead fields, team slot, submission channel and deadline, and Day 2 close. |
+| Critical risks | Exact submission cutoff remains unconfirmed. The verified demo uses structured intake. A live Gemini provider run remains unverified. |
+| Next action | Use the three-minute judge cue sheet for the live slot. Confirm the team slot, submission instructions and roster fields. |
 
-**Clock snapshot · November 25, 2026 at 01:18 PM IST.** About **60 working minutes** remain before the published 2:30 PM judging start, excluding scheduled lunch. An earlier cutoff could shorten this window.
+**Clock snapshot · November 25, 2026 at 02:35 PM IST.** The scheduled 2:30 PM Round 1 judging block has started. The team’s individual slot and cutoff are unconfirmed.
 
-[PPT info document](../presentation/SLIDE_CONTENT.md) · [Decision](../strategy/FINAL_RECOMMENDATION.md) · [CampusFlow statement](../strategy/CAMPUSFLOW_PROBLEM_STATEMENT.md) · [Rubric](../context/JUDGING_CRITERIA.md) · [Tasks](TASKS.md) · [Risks](RISKS.md) · [Decisions](../strategy/DECISIONS.md)
+[Three-minute judge cue sheet](../presentation/CAMPUSFLOW_3_MINUTE_JUDGE_SCRIPT.md) · [Run the prototype](../prototype/README.md) · [Demo and assets](../presentation/DEMO_STORYBOARD.md) · [Verification](../evaluation/PROTOTYPE_VERIFICATION.md) · [PowerPoint draft](../presentation/CampusFlow_Round_1_Two_Tab_Draft.pptx) · [PPT info document](../presentation/SLIDE_CONTENT.md) · [Decision](../strategy/FINAL_RECOMMENDATION.md) · [CampusFlow statement](../strategy/CAMPUSFLOW_PROBLEM_STATEMENT.md) · [Rubric](../context/JUDGING_CRITERIA.md) · [Tasks](TASKS.md) · [Risks](RISKS.md) · [Decisions](../strategy/DECISIONS.md)

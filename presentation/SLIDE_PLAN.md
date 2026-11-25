@@ -1,17 +1,17 @@
 # Round 1 presentation workflow
 
-The supplied reference contains seven slides. Use its headings, order and cover/team fields. The rubric provides a three-minute walkthrough and three-minute Q&A. Confirm the individual slot, receipt deadline, channel and whether the required working PoC is authorized before Checkpoint Alpha. [PPT reference](../references/official/SUBMISSION%20TEMPLATEEE.pptx) · [Round 1 rubric](../context/JUDGING_CRITERIA.md)
+The supplied reference contains seven slides. Use its headings, order and cover/team fields. The rubric provides a three-minute walkthrough and three-minute Q&A. The team confirmed organizer authorization for the early PoC. Confirm the individual slot, receipt deadline and submission channel. [PPT reference](../references/official/SUBMISSION%20TEMPLATEEE.pptx) · [Round 1 rubric](../context/JUDGING_CRITERIA.md)
 
-Use the [CampusFlow PPT information document](SLIDE_CONTENT.md) for paste-ready text, visuals, speaker notes and the timed scenario.
+Use the [CampusFlow PPT information document](SLIDE_CONTENT.md) for paste-ready text, visuals, speaker notes and the timed scenario. Keep **College Resource Allocation** and **Vehicle Fleet Management** as the two primary tab labels throughout.
 
 | Slide | Required content | CampusFlow mapping |
 | --- | --- | --- |
 | 1 · Team submission | Team name, leader, chosen domain, problem | Management · Track 4, coordinating campus parking and shared resources during demand changes |
-| 2 · Problem | Campus problem, affected users, impact and limits of current solutions | Late lab move, full car lot, former classroom still powered and three named comparators. |
-| 3 · Solution | Agentic AI and differentiating innovation | Interpret an ambiguous change, choose evidence, coordinate independent staff approvals and explain the resulting decisions. |
-| 4 · Architecture | Stack and data-flow diagram | Synthetic event → one model and allowlisted reads → deterministic checks → role approval and recheck → SQLite state and verification. |
-| 5 · Demo & roadmap | Live demo plan, deliverable, short-, mid- and long-term plan | Verified overflow, room decision blocked by occupancy, later verified mock standby. Catalog and additional scenarios follow the core. |
-| 6 · Feasibility | 24-hour build scope, components, hardware and scale path | Browser, Python API and SQLite. Laptop only for MVP, optional LEDs. Scope against the 16.5-hour elapsed finale window. |
+| 2 · Problem | Campus problem, affected users, impact and limits of current solutions | Two columns for the same late lab move. Resource staff check room availability and occupancy. Fleet staff handle a full lot and changing overflow need. |
+| 3 · Solution | Agentic AI and differentiating innovation | Two-tab feature map with spaces, equipment and room devices in Resource, and car/bike capacity, entry and exit, and overflow in Fleet. Show the shared agent loop. |
+| 4 · Architecture | Stack and data-flow diagram | One incident and one model, then separate policy, approval and readback lanes for the two tabs. |
+| 5 · Demo & roadmap | Live demo plan, deliverable, short-, mid- and long-term plan | Fleet verifies a bay assignment and spot release. Resource blocks an occupied-room change, then verifies an independently approved mock standby. |
+| 6 · Feasibility | 24-hour build scope, components, hardware and scale path | A named MVP slice per tab. Browser, Python API, SQLite and optional LEDs. Plan against the 16.5-hour elapsed finale window. |
 | 7 · Team | Leader details, members and declared tools | Fill from team-confirmed roster and list actual tools. |
 
 | Narrative beat | What the judge should take away |

@@ -2,7 +2,7 @@
 
 Received November 25, 2026, around 11:54 AM IST. The four-page organizer PDF has no visible revision number. Its track wording appears below with line wrapping and bullets normalized. [Official problem statements](../references/official/MARTIAN_1.0_Problem_Statements_Open_Innovation.pdf)
 
-The PDF calls the theme “Agentic AI for Campus Wellness.” The promotional poster and supplied deck cover use “Mars — Agentic AI for a Smarter Campus Hackathon.” Keep the template wording and use the track terminology in the proposal. See the [subsequently received rubric](JUDGING_CRITERIA.md) and [seven-slide template reference](../presentation/SLIDE_PLAN.md). The team confirmed Management Track 4. [CampusFlow](../strategy/CAMPUSFLOW_PROBLEM_STATEMENT.md) is the current team-originated draft, pending organizer approval.
+The PDF calls the theme “Agentic AI for Campus Wellness.” The promotional poster and supplied deck cover use “Mars — Agentic AI for a Smarter Campus Hackathon.” Keep the template wording and use the track terminology in the proposal. See the [subsequently received rubric](JUDGING_CRITERIA.md) and [seven-slide template reference](../presentation/SLIDE_PLAN.md). The team confirmed Management Track 4. [CampusFlow](../strategy/CAMPUSFLOW_PROBLEM_STATEMENT.md) is the selected team-originated statement. The team confirmed organizer approval on November 25. [Decision log](../strategy/DECISIONS.md)
 
 ## Security · Track 1 · Comms Guardian
 

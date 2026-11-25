@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>CampusFlow · Campus operations</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="identity">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>CampusFlow</span>
+        <span class="brand-sub">Campus operations</span>
+      </div>
+      <div class="top-actions">
+        <span class="source">Synthetic environment</span>
+        <button type="button" class="button ghost" data-action="audit">Incident audit</button>
+        <button type="button" class="button ghost reset" data-action="reset">Reset demo</button>
+      </div>
+    </div>
+  </header>
+  <main class="workspace">
+    <section id="incident" aria-label="Shared incident" class="incident"></section>
+    <div id="announcements" class="screen-reader" role="status" aria-live="polite"></div>
+    <div id="error" class="error" role="alert" hidden></div>
+    <noscript><p class="error">CampusFlow requires JavaScript for the local demo.</p></noscript>
+    <nav class="tabs" aria-label="Operations views">
+      <button type="button" data-view="fleet" aria-current="page">Vehicle Fleet Management</button>
+      <button type="button" data-view="resources">College Resource Allocation</button>
+    </nav>
+    <div class="workspace-grid">
+      <div class="operation">
+        <nav id="subtabs" class="subtabs" aria-label="Vehicle fleet views"></nav>
+        <section id="operation" aria-label="Operational state"><p>Loading scenario…</p></section>
+      </div>
+      <aside id="console" class="console" aria-label="Demo controls and activity"></aside>
+    </div>
+    <footer><span>MARTIAN 1.0 · Checkpoint Alpha</span><span>Local simulator · sample records and mock device states</span></footer>
+  </main>
+  <dialog id="audit-dialog" aria-labelledby="audit-title">
+    <div class="dialog-top">
+      <div>
+        <p class="eyebrow">Shared incident</p>
+        <h2 id="audit-title">Decision audit</h2>
+      </div>
+      <form method="dialog"><button class="button muted">Close audit</button></form>
+    </div>
+    <div id="audit-body"></div>
+  </dialog>
+</body>
+</html>

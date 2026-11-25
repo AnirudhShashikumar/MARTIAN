@@ -10,6 +10,10 @@
 - [x] Synthesize the five shortlisted concepts into one practical-assessment recovery statement, with a rubric and demo plan.
 - [x] Draft CampusFlow from the team's parking and resource management proposal.
 - [x] Compare candidate refinements, review the top three and prepare all seven slides' content, pitch and Q&A.
-- [ ] Request organizer approval of CampusFlow and confirm timing, PoC permission and submission rules.
+- [x] Build and verify the editable seven-slide draft with College Resource Management and Vehicle Fleet Management.
+- [x] Team confirmed organizer approval of CampusFlow and permission to code before Checkpoint Alpha.
+- [ ] Record the organizer message, team slot and submission rules.
 - [ ] Produce, challenge, rehearse and submit the Round 1 deck.
-- [ ] If shortlisted and authorized, build, validate and demonstrate the original prototype.
+- [x] Build and validate the authorized Round 1 prototype and capture the recorded-state assets.
+- [ ] Verify the optional Gemini path if a team-approved model and credential are available.
+- [ ] If shortlisted, extend the prototype during the applicable final-round window.
