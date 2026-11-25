@@ -17,4 +17,10 @@
 - [x] Build and validate the authorized Round 1 prototype and capture the recorded-state assets.
 - [x] Add the supplied BMSITM crest and verify the refined app layout on desktop and mobile.
 - [ ] Verify the optional Gemini path if a team-approved model and credential are available.
-- [ ] If shortlisted, extend the prototype during the applicable final-round window.
+- [x] Team confirmed the top-ten shortlist and prepared the Checkpoint Beta execution plan.
+- [ ] Record Beta rubric, slot, demo duration, submission cutoff, channel and required files.
+- [ ] Assign owners and preserve the verified Alpha build before combining changes.
+- [ ] Implement and prove variable note intake, typed evidence selection and the shared offline fallback.
+- [ ] Rehearse the independent parking and facilities approval and recovery journey from reset.
+- [ ] Run the paired 12-case evaluation and log correctness, operator input, safety and timing.
+- [ ] Freeze, verify on the presenting laptop, package the requested files and confirm submission receipt.

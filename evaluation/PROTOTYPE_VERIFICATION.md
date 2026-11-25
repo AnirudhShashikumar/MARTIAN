@@ -15,6 +15,17 @@ Verified November 25, 2026 on the local presentation build. All operational inpu
 
 **Observed synthetic outcome.** One case produced two verified branches. A fresh occupied reading revoked one pending room proposal without a device write, and one confirmed regular exit released one bay. The later occupancy sequence led to mock lights and fans off and projector in standby. These figures count results in the fixture. The scenario clock and counts provide no estimate of campus-wide savings or frequency.
 
+## Local API latency
+
+On November 25, 2026, FastAPI's in-process TestClient ran the offline recovery scenario on macOS arm64 with Python 3.9.6 and a temporary SQLite database. After five warm-up runs, 30 measured runs completed both branches. Each measured run sent seven sequential commands, from injecting the schedule change through fresh room approval. The sample excludes reset, browser rendering, network transport, provider calls and staff decision time.
+
+| Measure | Median | 95th percentile |
+| --- | ---: | ---: |
+| Command response time across 210 requests | 0.97 ms | 1.06 ms |
+| Sum of seven command times per scenario | 6.74 ms | 7.12 ms |
+
+The figures characterize the local prototype under sequential synthetic inputs. The regression suite separately checks competing approvals and rollback.
+
 ## Five-perspective judge review
 
 | Perspective | Hard question | Evidence and remaining work |
