@@ -15,5 +15,6 @@
 - [ ] Record the organizer message, team slot and submission rules.
 - [ ] Produce, challenge, rehearse and submit the Round 1 deck.
 - [x] Build and validate the authorized Round 1 prototype and capture the recorded-state assets.
+- [x] Add the supplied BMSITM crest and verify the refined app layout on desktop and mobile.
 - [ ] Verify the optional Gemini path if a team-approved model and credential are available.
 - [ ] If shortlisted, extend the prototype during the applicable final-round window.
