@@ -127,6 +127,11 @@ class CctvStartPayload(BaseModel):
     hold_seconds: float = 3.0
 
 
+class CctvOverridePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["on", "off", "auto"]
+
+
 def create_app(*, hosted=False, database_url=None, cctv_engine=None):
     @asynccontextmanager
     async def lifespan(application):
@@ -187,6 +192,9 @@ def create_app(*, hosted=False, database_url=None, cctv_engine=None):
         return FileResponse(ROOT / "static" / "landing.html")
 
     @application.get("/fleet")
+    def fleet_dashboard():
+        return FileResponse(ROOT / "static" / "fleet.html")
+
     @application.get("/resources")
     def dashboard():
         return FileResponse(ROOT / "static" / "index.html")
@@ -263,6 +271,10 @@ def register_cctv_routes(application):
     @application.post("/api/cctv/stop")
     def cctv_stop():
         return application.state.cctv.stop()
+
+    @application.post("/api/cctv/override")
+    def cctv_override(body: CctvOverridePayload):
+        return application.state.cctv.set_manual_override(body.mode)
 
     @application.get("/api/cctv/stream")
     def cctv_stream_endpoint():

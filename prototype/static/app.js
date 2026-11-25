@@ -8,22 +8,17 @@ const stages = {
 };
 let state;
 let busy = false;
-const view = window.location.pathname === "/resources" ? "resources" : "fleet";
+const view = "resources";
 const workspace = {
-  fleet: {
-    title: "Vehicle Fleet Management", path: "/fleet", area: "Campus mobility",
-    description: "Track gate activity, parking capacity, and overflow at Gate A.",
-    sections: [["parking", "Parking overview"], ["map", "Campus map"], ["gate", "Gate ledger"], ["overflow", "Overflow approvals"]],
-  },
-  resources: {
-    title: "College Resource Allocation", path: "/resources", area: "Campus facilities",
-    description: "Manage classrooms, labs, library seats, and shared equipment.",
-    sections: [["rooms", "Rooms & devices"], ["labs", "Labs"], ["library", "Library seats"], ["equipment", "Sports equipment"]],
-  },
-}[view];
+  title: "College Resource Allocation",
+  path: "/resources",
+  area: "Campus facilities",
+  description: "Manage classrooms, labs, library seats, and shared equipment.",
+  sections: [["rooms", "Rooms & devices"], ["labs", "Labs"], ["library", "Library seats"], ["equipment", "Sports equipment"]],
+};
 const resourceTabs = new Set(["labs", "library", "equipment"]);
 const linkedSection = new URLSearchParams(window.location.search).get("section");
-let section = view === "resources" && resourceTabs.has(linkedSection) ? linkedSection : workspace.sections[0][0];
+let section = resourceTabs.has(linkedSection) ? linkedSection : workspace.sections[0][0];
 let resourceWorkspace;
 let cctv = {
   active: false,
@@ -32,14 +27,16 @@ let cctv = {
   source: "http://10.110.18.80:4747/video",
   backend: "idle",
   state: "EMPTY",
+  manual_override: null,
   person_count: 0,
   confidence: 0,
   hold_remaining: 0,
   fps: 0,
   infer_ms: 0,
   devices: { Lights: "Off", Fans: "Off", Projector: "Off" },
-  status_message: "CCTV inactive — click Initialize CCTV Cam to start Phone 1 DroidCam.",
+  status_message: "CCTV inactive — click Initialize CCTV Cam or use Manual Override.",
   error: null,
+  events: [],
 };
 let cctvBusy = false;
 let cctvPollTimer = null;
@@ -112,162 +109,83 @@ function renderIncident() {
   incident.hidden = false;
 }
 
-function capacity(kind) {
-  const bays = state.bays.filter((bay) => bay.kind === kind && bay.policy !== "Overflow");
-  const general = bays.filter((bay) => bay.policy === "General");
-  const available = general.filter((bay) => !bay.vehicle).length;
-  const spots = bays.map((bay) =>
-    `<span class="spot ${bay.policy !== "General" ? "safe" : bay.vehicle ? "taken" : ""}" title="${escape(bay.id + " · " + (bay.vehicle || bay.policy))}"></span>`
-  ).join("");
-  const protectedCount = bays.length - general.length;
-  const note = protectedCount ? `${protectedCount} protected bays` : "General bike bays";
-  return `<div class="capacity"><h3>${kind === "Car" ? "Car parking" : "Bike parking"}</h3>
-    <strong class="data">${available} / ${general.length} free</strong><p class="capacity-note">${note}</p>
-    <div class="spots" aria-hidden="true">${spots}</div></div>`;
-}
-
-function parkingOverview() {
-  const proposal = state.branches.parking;
-  const overflow = state.bays.find((bay) => bay.policy === "Overflow");
-  const windowLabel = state.session ? state.session.arrival_window : "Opens by approval";
-  const closed = state.session && state.clock >= state.session.overflow_closes_at;
-  let overflowState = overflow.vehicle ? "Assigned" : "Standby";
-  if (closed) overflowState = overflow.vehicle ? "Closed · occupied" : "Window closed";
-  else if (proposal.status === "pending") overflowState = "Approval needed";
-  const arrivalsWaiting = state.gate.filter((event) => event.status === "Waiting").length;
-  const carBays = state.bays.filter((bay) => bay.kind === "Car" && bay.policy === "General");
-  const occupied = carBays.filter((bay) => bay.vehicle).length;
-  const percent = carBays.length ? Math.round(occupied / carBays.length * 100) : 0;
-
-  return `<section class="panel">
-    <div class="panel-head"><div><h2>Parking capacity</h2><p>Gate A · simulated bay availability</p></div>
-      ${badge(arrivalsWaiting ? `${arrivalsWaiting} waiting` : "Gate clear", arrivalsWaiting ? "pending" : "clear")}</div>
-    <div class="overview-layout">
-      <button type="button" class="overview-media map-preview" data-section="map">
-        <img src="/static/campus-parking-map.webp" width="1264" height="848" alt="">
-        <span>View campus map</span>
-      </button>
-      <div class="meter-stage">
-        <div class="capacity-meter" style="--fill: ${percent}%">
-          <div><strong>${percent}%</strong><span>Car bays occupied</span></div>
-        </div>
-        <p>${occupied} of ${carBays.length} general car bays in use</p>
-      </div>
-      <div class="capacity-grid">
-        ${capacity("Car")}${capacity("Bike")}
-        <div class="capacity ${overflow.vehicle ? "checked" : proposal.status === "pending" ? "callout" : ""}">
-          <h3>Overflow · ${escape(overflow.id)}</h3><strong class="data">${overflowState}</strong><p class="capacity-note">${escape(windowLabel)}</p>
-        </div>
-      </div>
-    </div>
-  </section>
-  ${gateLedger(false)}`;
-}
-
-function campusMap() {
-  return `<section class="panel">
-    <div class="panel-head"><div><h2>Campus parking map</h2><p>BMSITM · Gate A approach and parking zones</p></div>
-    ${badge("Layout reference")}</div>
-    <figure class="campus-map">
-      <img src="/static/campus-parking-map.webp" width="1264" height="848"
-        alt="Plan of Gate A at the bottom, with the main bike lot to the left, car parking to the right, and the secondary bike zone along the right perimeter.">
-      <span class="map-pin bikes" aria-hidden="true">Bike lot</span>
-      <span class="map-pin cars" aria-hidden="true">Car lot</span>
-      <span class="map-pin bike-zone" aria-hidden="true">Bike zone 2</span>
-      <span class="map-pin gate" aria-hidden="true">Gate A</span>
-    </figure>
-    <div class="map-directions">
-      <div><strong>Gate A</strong><span>Main entry and exit</span></div>
-      <div><strong>Bike lot</strong><span>Left of the main approach</span></div>
-      <div><strong>Car lot</strong><span>Right of the main approach</span></div>
-      <div><strong>Bike zone 2</strong><span>Along the right perimeter</span></div>
-    </div>
-    <p class="panel-note">The map shows the campus layout. Parking overview shows the smaller simulated bay set used for the incident.</p>
-  </section>`;
-}
-
-function gateLedger(full = true) {
-  const picked = ["CAR-078", "BIKE-014", "CAR-021"];
-  const records = full ? [...state.gate].reverse() : state.phase === "baseline"
-    ? state.gate.slice(-3).reverse()
-    : picked.map((id) => state.gate.find((item) => item.vehicle === id)).filter(Boolean);
-  const rows = records.map((event) => {
-    const status = event.status === "Waiting" ? "pending" : "verified";
-    return `<tr><td>${escape(event.vehicle)}</td><td>${escape(event.bay ?? "—")}</td>
-      <td>${clock(event.entered)}</td><td>${event.exited === null ? "—" : clock(event.exited)}</td>
-      <td>${badge(event.status, status)}</td></tr>`;
-  }).join("");
-  const description = full ? "All synthetic vehicle entries and exits at Gate A" :
-    state.phase === "baseline" ? "Recent synthetic arrivals" : "Vehicles in the demo sequence";
-  return `<section class="panel">
-    <div class="panel-head"><div><h2>${full ? "Gate ledger" : "Gate activity"}</h2><p>${description}</p></div></div>
-    <div class="table-scroll"><table class="fleet-table"><thead><tr>
-      <th scope="col">Vehicle</th><th scope="col">Bay</th><th scope="col">Entry</th>
-      <th scope="col">Exit</th><th scope="col">Status</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>
-  </section>`;
-}
-
-function overflowPanel() {
-  const proposal = state.branches.parking;
-  const bay = state.bays.find((item) => item.policy === "Overflow");
-  const closed = state.session && state.clock >= state.session.overflow_closes_at;
-  const windowState = closed ? "Closed" : state.session ? "In window" : "Awaiting timetable";
-  return `<section class="panel">
-    <div class="panel-head"><div><h2>Temporary overflow</h2><p>Gate A · designated car parking</p></div>
-    ${badge(stages[proposal.status], proposal.status)}</div>
-    <div class="detail-grid">
-      <div><span>Overflow bay</span><strong>${escape(bay.id)}</strong></div>
-      <div><span>Assigned vehicle</span><strong>${escape(bay.vehicle || "Unassigned")}</strong></div>
-      <div><span>${windowState}</span><strong>${escape(state.session?.arrival_window || "—")}</strong></div>
-    </div>
-    <p class="panel-note">${escape(proposal.detail || "Parking staff approve temporary use after general car capacity is filled.")}</p>
-  </section>`;
-}
-
 function cctvBannerClass() {
+  if (cctv.manual_override === "on") return "occupied";
+  if (cctv.manual_override === "off") return "empty";
   if (!cctv.active) return "idle";
   if (!cctv.has_frame) return "connecting";
   return cctv.state === "OCCUPIED" ? "occupied" : "empty";
 }
 
 function cctvBannerMeta() {
+  if (cctv.manual_override) return "Manual Override active — click Return to Auto to follow live CCTV again";
   if (!cctv.active) return "Phone 1 DroidCam stream + YOLOv8n person detection (RAM-only, no video saved)";
   if (cctv.error) return `Stream notice: ${cctv.error}`;
   if (!cctv.has_frame) return `Connecting to ${cctv.source}…`;
   return `${cctv.person_count} ${cctv.person_count === 1 ? "person" : "people"} in frame · YOLOv8n ${cctv.infer_ms} ms · ${cctv.fps} FPS`;
 }
 
+function isClassroomView() {
+  return view === "resources" && section === "rooms";
+}
+
+function classroomAllOn() {
+  const devs = state?.local_resource_workflows ? cctv.devices : (state?.room?.devices || {});
+  return Object.values(devs).some((val) => val === "On");
+}
+
 function syncCctvDom() {
   const banner = $("#cctv-banner");
-  if (!banner) return;
-  banner.className = `cctv-banner ${cctvBannerClass()}`;
-  const msgEl = $("#cctv-msg");
-  const metaEl = $("#cctv-meta");
-  const countEl = $("#cctv-count");
-  const presenceEl = $("#cctv-presence");
-  const meterBox = $("#cctv-meter-box");
-  if (msgEl) msgEl.textContent = cctv.status_message;
-  if (metaEl) metaEl.textContent = cctvBannerMeta();
+  if (banner) {
+    banner.className = `cctv-banner ${cctvBannerClass()}`;
+    const msgEl = $("#cctv-msg");
+    const metaEl = $("#cctv-meta");
+    if (msgEl) msgEl.textContent = cctv.status_message;
+    if (metaEl) metaEl.textContent = cctvBannerMeta();
+  }
 
-  if (cctv.active) {
-    if (countEl) countEl.textContent = cctv.has_frame ? String(cctv.person_count) : "…";
-    if (presenceEl) {
-      presenceEl.textContent = cctv.has_frame
-        ? `${cctv.person_count} ${cctv.person_count === 1 ? "person" : "people"} detected (live CCTV)`
-        : "Connecting to DroidCam…";
+  const headBadge = $("#classroom-head-badge");
+  if (headBadge) {
+    let text = "Idle";
+    let cls = "idle";
+    if (cctv.manual_override === "on") { text = "Override · All On"; cls = "verified"; }
+    else if (cctv.manual_override === "off") { text = "Override · All Off"; cls = "held"; }
+    else if (cctv.active) {
+      text = cctv.state === "OCCUPIED" ? "Live · Occupied" : "Live · Empty";
+      cls = cctv.state === "OCCUPIED" ? "verified" : "idle";
     }
-    if (meterBox) meterBox.classList.toggle("attention", cctv.has_frame && cctv.person_count > 0);
+    headBadge.className = `badge ${cls}`;
+    headBadge.textContent = text;
+  }
 
+  const ovSwitch = $("#manual-override-switch");
+  if (ovSwitch) {
+    const isOn = classroomAllOn();
+    ovSwitch.setAttribute("aria-checked", String(isOn));
+    ovSwitch.classList.toggle("on", isOn);
+    const label = ovSwitch.querySelector(".switch-state");
+    if (label) label.textContent = isOn ? "ALL ON" : "ALL OFF";
+  }
+
+  if (state?.local_resource_workflows) {
+    const subLabel = cctv.manual_override
+      ? "Manual override"
+      : (cctv.active ? "Live CCTV auto" : "Ready");
     Object.entries(cctv.devices).forEach(([name, val]) => {
       const card = document.querySelector(`[data-device-card="${name}"]`);
       if (!card) return;
+      card.classList.toggle("is-on", val === "On");
+      card.classList.toggle("is-off", val !== "On");
       card.classList.toggle("confirmed", val !== "On");
       const strong = card.querySelector("strong");
       const small = card.querySelector("small");
       if (strong) strong.textContent = val;
-      if (small) small.textContent = "Live CCTV vision";
+      if (small) small.textContent = subLabel;
     });
+  }
+
+  if (isClassroomView()) {
+    $("#activity").innerHTML = activityPanel();
   }
 }
 
@@ -302,6 +220,30 @@ async function handleCctvAction(mode) {
   if (cctvBusy) return;
   const input = $("#cctv-source");
   if (input && input.value.trim()) cctv.source = input.value.trim();
+
+  // Manual Override toggle updates in-place so the live MJPEG <img> never flickers/reloads
+  if (mode === "toggle_override" || mode === "override_auto") {
+    const nextMode = mode === "override_auto" ? "auto" : (classroomAllOn() ? "off" : "on");
+    try {
+      cctv = await api("/api/cctv/override", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: nextMode }),
+      });
+      if (cctv.active) {
+        syncCctvDom();
+        const autoBtn = $("#manual-override-auto");
+        if (autoBtn) autoBtn.hidden = !cctv.manual_override;
+      } else {
+        render();
+      }
+      $("#announcements").textContent = cctv.status_message;
+    } catch (error) {
+      notify(error.message || "Could not update manual override.");
+    }
+    return;
+  }
+
   cctvBusy = true;
   notify();
   renderSection();
@@ -323,41 +265,30 @@ async function handleCctvAction(mode) {
     notify(error.message || "Could not update CCTV camera state.");
   } finally {
     cctvBusy = false;
-    renderSection();
+    render();
     if (cctv.active) startCctvPolling();
   }
 }
 
 function roomsPanel() {
   const room = state.room;
-  const last = room.samples[room.samples.length - 1];
   const roomStatus = state.branches.room.status;
-  const old = last !== undefined && state.clock - last.at > 12;
-  const liveCctv = Boolean(state.local_resource_workflows && cctv.active);
+  const localMode = Boolean(state.local_resource_workflows);
+  const liveCctv = Boolean(localMode && cctv.active);
 
-  let presence = "Occupancy awaiting scenario";
-  let meterVal = "—";
-  let meterAttention = false;
-  if (liveCctv) {
-    meterVal = cctv.has_frame ? String(cctv.person_count) : "…";
-    presence = cctv.has_frame
-      ? `${cctv.person_count} ${cctv.person_count === 1 ? "person" : "people"} detected (live CCTV)`
-      : "Connecting to DroidCam…";
-    meterAttention = cctv.has_frame && cctv.person_count > 0;
-  } else if (last) {
-    meterVal = !old ? String(last.count) : "—";
-    presence = old ? "Occupancy feed stale" : `${last.count} ${last.count === 1 ? "person" : "people"} detected`;
-    meterAttention = old || Boolean(last.count);
-  }
+  const activeDevices = localMode ? cctv.devices : room.devices;
+  const subLabel = cctv.manual_override
+    ? "Manual override"
+    : (liveCctv ? "Live CCTV auto" : "Ready");
 
-  const activeDevices = liveCctv ? cctv.devices : room.devices;
   const devices = Object.entries(activeDevices).map(([name, status]) =>
-    `<div class="device ${status === "On" ? "" : "confirmed"}" data-device-card="${escape(name)}"><span>${escape(name)}</span>
+    `<div class="device ${status === "On" ? "is-on" : "is-off confirmed"}" data-device-card="${escape(name)}"><span>${escape(name)}</span>
        <strong>${escape(status)}</strong>
-       <small>${liveCctv ? "Live CCTV vision" : (roomStatus === "verified" ? "Mock readback" : "Simulated state")}</small></div>`
+       <small>${localMode ? subLabel : "Classroom appliance"}</small></div>`
   ).join("");
 
-  const cctvControls = state.local_resource_workflows ? `
+  const isOn = classroomAllOn();
+  const cctvControls = localMode ? `
     <div class="cctv-bar">
       <label class="cctv-field">
         <span>Phone 1 DroidCam URL (or <code>0</code> for laptop webcam)</span>
@@ -368,9 +299,22 @@ function roomsPanel() {
           ? `<button type="button" class="button secondary cctv-stop" data-cctv="stop" ${cctvBusy ? "disabled" : ""}>Disable CCTV</button>`
           : `<button type="button" class="button primary" data-cctv="start" ${cctvBusy ? "disabled" : ""}>${cctvBusy ? "Starting…" : "Initialize CCTV Cam"}</button>`}
       </div>
+    </div>
+    <div class="override-bar">
+      <div class="override-copy">
+        <strong>Manual Override · Master Power</strong>
+        <span>Turn Lights, Fans &amp; Projector all On or Off at once</span>
+      </div>
+      <div class="override-controls">
+        <button id="manual-override-auto" type="button" class="button ghost btn-auto" data-cctv="override_auto" ${cctv.manual_override ? "" : "hidden"}>Return to Auto</button>
+        <button id="manual-override-switch" type="button" role="switch" aria-checked="${isOn}" class="master-switch ${isOn ? "on" : ""}" data-cctv="toggle_override">
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+          <span class="switch-state">${isOn ? "ALL ON" : "ALL OFF"}</span>
+        </button>
+      </div>
     </div>` : "";
 
-  const mediaBlock = liveCctv ? `
+  const liveStreamBlock = liveCctv ? `
     <div class="cctv-stage">
       <figure class="overview-media cctv-media">
         <img id="cctv-feed" src="/api/cctv/stream?t=${cctvStreamToken}" alt="Live Classroom C-101 CCTV stream with YOLOv8 person bounding boxes">
@@ -380,30 +324,32 @@ function roomsPanel() {
         <strong id="cctv-msg">${escape(cctv.status_message)}</strong>
         <span id="cctv-meta">${escape(cctvBannerMeta())}</span>
       </div>
-    </div>` : `
-    <figure class="overview-media">
-      <img src="/static/resource-library.webp" width="1280" height="720" alt="">
-      <figcaption class="media-caption">Illustrative campus interior · click Initialize CCTV Cam for live feed</figcaption>
-    </figure>`;
+    </div>` : (localMode && cctv.manual_override ? `
+    <div id="cctv-banner" class="cctv-banner ${cctvBannerClass()}" role="status" aria-live="polite" style="margin-bottom:14px;">
+      <strong id="cctv-msg">${escape(cctv.status_message)}</strong>
+      <span id="cctv-meta">${escape(cctvBannerMeta())}</span>
+    </div>` : "");
+
+  let headBadgeHtml = badge(stages[roomStatus], roomStatus);
+  if (localMode) {
+    let bText = "Idle";
+    let bCls = "idle";
+    if (cctv.manual_override === "on") { bText = "Override · All On"; bCls = "verified"; }
+    else if (cctv.manual_override === "off") { bText = "Override · All Off"; bCls = "held"; }
+    else if (liveCctv) {
+      bText = cctv.state === "OCCUPIED" ? "Live · Occupied" : "Live · Empty";
+      bCls = cctv.state === "OCCUPIED" ? "verified" : "idle";
+    }
+    headBadgeHtml = `<span id="classroom-head-badge" class="badge ${bCls}">${escape(bText)}</span>`;
+  }
 
   return `<section class="panel">
     <div class="panel-head"><div><h2>Classroom C-101</h2>
-       <p>${liveCctv ? `Live DroidCam CCTV · YOLOv8n person detection` : (last ? `Synthetic occupancy · last sample ${clock(last.at)}` : "Original location · device state simulated")}</p></div>
-       ${liveCctv ? badge(cctv.state === "OCCUPIED" ? "Live · Occupied" : "Live · Empty", cctv.state === "OCCUPIED" ? "verified" : "idle") : badge(stages[roomStatus], roomStatus)}</div>
+       <p>${liveCctv ? "Live DroidCam CCTV · Person detected turns all On · Empty turns all Off" : "Initialize CCTV Cam for auto-detection or flip Manual Override"}</p></div>
+       ${headBadgeHtml}</div>
     ${cctvControls}
-    <div class="overview-layout ${liveCctv ? "cctv-active-layout" : ""}">
-      ${mediaBlock}
-      <div class="meter-stage">
-        <div id="cctv-meter-box" class="room-meter ${meterAttention ? "attention" : ""}">
-          <div><strong id="cctv-count">${escape(meterVal)}</strong><span id="cctv-presence">${presence}</span></div>
-        </div>
-        <div class="room-evidence">
-          <span class="evidence">${room.booking ? "Booking active" : "Calendar clear"}</span>
-          <span class="evidence ${room.hold ? "alert" : ""}">Manual hold ${room.hold ? "on" : "off"}</span>
-        </div>
-      </div>
-      <div class="device-grid">${devices}</div>
-    </div>
+    ${liveStreamBlock}
+    <div class="device-grid classroom-devices">${devices}</div>
   </section>
   <section class="panel">
     <div class="panel-head"><div><h2>Shared resources</h2><p>Sample availability</p></div></div>
@@ -459,8 +405,10 @@ function equipmentPanel() {
 }
 
 const renderSections = {
-  parking: parkingOverview, map: campusMap, gate: gateLedger, overflow: overflowPanel, rooms: roomsPanel,
-  labs: labsPanel, library: libraryPanel, equipment: equipmentPanel,
+  rooms: roomsPanel,
+  labs: labsPanel,
+  library: libraryPanel,
+  equipment: equipmentPanel,
 };
 
 function reviewActions(key, approveTone = "primary") {
@@ -501,29 +449,19 @@ function currentControl() {
     action("confirm", "Confirm synthetic schedule", "primary"),
   ];
 
-  const key = view === "fleet" ? "parking" : "room";
+  const key = "room";
   const branch = state.branches[key];
   if (branch.status === "pending") {
-    const firstRoomProposal = key === "room" && !state.audit.some((log) => log.title === "Pending standby blocked");
+    const firstRoomProposal = !state.audit.some((log) => log.title === "Pending standby blocked");
     const decisions = reviewActions(key, firstRoomProposal ? "secondary" : "primary");
     return [
-      "Plan", key === "parking" ? "Authorize temporary overflow" : "Review room standby", branch.detail,
+      "Plan", "Review room standby", branch.detail,
       (firstRoomProposal ? action("occupied", "Inject occupied reading", "primary") : "") + decisions,
       roles[key],
     ];
   }
   if (branch.status === "held" || branch.status === "rejected") {
-    const buttons = key === "room" ? action("vacant", "Recheck sustained vacancy", "primary") :
-      '<a class="button primary" href="/resources">Open resource view</a>';
-    return ["Adapt", key === "room" ? "Standby on hold" : "Parking staff review", branch.detail, buttons];
-  }
-  if (key === "parking") {
-    const exitDone = state.events.includes("GATE-EXIT-021");
-    return [
-      "Verify", `${branch.bay} assignment verified`, branch.detail,
-      exitDone ? '<a class="button primary" href="/resources">Open resource view</a>' :
-        action("exit", "Confirm regular car exit", "primary"),
-    ];
+    return ["Adapt", "Standby on hold", branch.detail, action("vacant", "Recheck sustained vacancy", "primary")];
   }
   return ["Explain", "Device state verified", branch.detail, action("audit", "View decision audit", "primary")];
 }
@@ -543,6 +481,31 @@ function consolePanel() {
 }
 
 function activityPanel() {
+  if (isClassroomView()) {
+    const cctvEvents = (cctv.events || []).map((ev) => ({
+      time: ev.time,
+      stage: ev.stage,
+      title: ev.title,
+      detail: ev.detail,
+    }));
+    const scenarioEvents = [...state.audit].reverse().map((log) => ({
+      time: clock(log.time),
+      stage: log.stage,
+      title: log.title,
+      detail: log.detail,
+    }));
+    const allLogs = [...cctvEvents, ...scenarioEvents];
+    const rows = allLogs.map((log) => `<li class="incident-log-item">
+      <div class="incident-log-meta"><span class="stage">${escape(log.stage)}</span><time>${escape(log.time)}</time></div>
+      <strong>${escape(log.title)}</strong>
+      ${log.detail ? `<p>${escape(log.detail)}</p>` : ""}
+    </li>`).join("");
+    return `<section class="panel activity incident-log-panel">
+      <div class="panel-head"><div><h2>Incident log</h2><p>Every classroom change recorded</p></div>${badge(`${allLogs.length}`, allLogs.length ? "verified" : "idle")}</div>
+      ${rows ? `<ol class="incident-log-list">${rows}</ol>` : '<p class="empty">No classroom changes yet. Click Initialize CCTV Cam to start logging live events.</p>'}
+    </section>`;
+  }
+
   const recentRows = state.audit.slice(-3).reverse().map((log) => `<li>
     <span class="stage">${escape(log.stage)}</span><strong>${escape(log.title)}</strong></li>`).join("");
   return `<section class="panel activity">
@@ -609,11 +572,25 @@ function updateResourceLink() {
   history.replaceState(history.state, "", url);
 }
 
-function render() {
-  renderIncident();
-  renderSection();
-  $("#console").innerHTML = consolePanel();
+function renderSidebar() {
+  const classroomOnlyLog = isClassroomView();
+  const consoleEl = $("#console");
+  const incidentEl = $("#incident");
+  if (classroomOnlyLog) {
+    consoleEl.innerHTML = "";
+    consoleEl.hidden = true;
+    incidentEl.hidden = true;
+  } else {
+    consoleEl.hidden = false;
+    renderIncident();
+    consoleEl.innerHTML = consolePanel();
+  }
   $("#activity").innerHTML = activityPanel();
+}
+
+function render() {
+  renderSection();
+  renderSidebar();
   if ($("#audit-dialog").open) renderAudit();
   $(".reset").disabled = busy;
   $(".header-actions [data-action=audit]").disabled = busy;
@@ -673,6 +650,7 @@ document.addEventListener("click", (event) => {
     section = button.dataset.section;
     updateResourceLink();
     renderSection();
+    renderSidebar();
     $("#subtabs [aria-current]").focus({ preventScroll: true });
     return;
   }

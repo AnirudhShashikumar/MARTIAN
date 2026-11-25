@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en" data-type="software">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="page-type" content="software" />
+<meta name="site-kind" content="software" />
+<title>CampusFlow · Vehicle Fleet Management</title>
+<link rel="icon" href="/static/campusflow-icon.png" type="image/png" />
+<style>
+  :root {
+    --bg: #080b11;
+    --surface: #0e121b;
+    --surface-2: #151b28;
+    --surface-3: #1d2536;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #f1f5f9;
+    --text-2: #94a3b8;
+    --text-3: #64748b;
+    --emerald: #10b981;
+    --emerald-soft: rgba(16, 185, 129, 0.14);
+    --amber: #f59e0b;
+    --amber-soft: rgba(245, 158, 11, 0.15);
+    --rose: #ef4444;
+    --rose-soft: rgba(239, 68, 68, 0.14);
+    --sky: #38bdf8;
+    --sky-soft: rgba(56, 189, 248, 0.14);
+    --accent: #f97316;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* TOP BAR (MATCHES e:\campusflow_parking_sim.html DARK STYLE + APP NAV) */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 20px;
+    background: rgba(14, 18, 27, 0.96);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: #080b11;
+    font-weight: 800;
+    font-size: 12.5px;
+    display: grid;
+    place-items: center;
+  }
+  .brand-name { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+  .brand-sub { font-size: 11.5px; color: var(--text-3); margin-left: 6px; font-weight: 500; }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-links a {
+    text-decoration: none;
+    color: var(--text-2);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 7px;
+    transition: background-color 140ms var(--ease), color 140ms var(--ease);
+  }
+  .nav-links a:hover { background: var(--surface-2); color: var(--text); }
+  .nav-links a[aria-current="page"] {
+    background: var(--surface-3);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+
+  .top-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .clock {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11.5px;
+    color: var(--text-2);
+    padding: 5px 9px;
+    border-radius: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+
+  /* PAGE SHELL */
+  .page {
+    max-width: 1520px;
+    margin: 0 auto;
+    padding: 16px 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ================= TWO SCREENS SIDE BY SIDE ================= */
+  .screens-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 16px;
+    align-items: stretch;
+  }
+  @media (max-width: 1020px) {
+    .screens-row { grid-template-columns: 1fr; }
+  }
+
+  .screen-box {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 500px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+  }
+
+  /* LEFT SCREEN: EMPTY FOR NOW + LOAD CLIP BUTTON */
+  .clip-screen {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #070a10;
+    padding: 20px;
+    min-height: 440px;
+  }
+  .clip-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+  }
+  .clip-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .clip-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  /* RIGHT SCREEN: MAP ONLY */
+  .map-screen {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: #0b0f17;
+    overflow: hidden;
+  }
+
+  .story-pill {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 13px;
+    border-radius: 999px;
+    background: rgba(14, 18, 27, 0.92);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text);
+    max-width: calc(100% - 32px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+  }
+  .story-dot { width: 8px; height: 8px; border-radius: 99px; background: var(--emerald); flex-shrink: 0; }
+  .story-pill.warn { border-color: rgba(245, 158, 11, 0.65); }
+  .story-pill.warn .story-dot { background: var(--amber); }
+  .story-pill.alert { border-color: rgba(239, 68, 68, 0.65); }
+  .story-pill.alert .story-dot { background: var(--rose); }
+  .story-pill.sky { border-color: rgba(56, 189, 248, 0.65); }
+  .story-pill.sky .story-dot { background: var(--sky); }
+
+  #simSvg {
+    width: 100%;
+    height: 100%;
+    max-height: 540px;
+    border-radius: 8px;
+    background: #131822;
+    user-select: none;
+    display: block;
+  }
+
+  .map-legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 8px 14px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-2);
+  }
+  .legend-items { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
+  .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 9px; height: 9px; border-radius: 2.5px; display: inline-block; }
+
+  /* ================= BOTTOM CONTROLS (OUTSIDE THE TWO SCREENS) ================= */
+  .controls-deck {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .deck-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  /* SIMULATION BUTTONS BAR (OUTSIDE SCREEN BOXES) */
+  .btn-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background-color 140ms var(--ease), border-color 140ms var(--ease), transform 110ms var(--ease);
+  }
+  button:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-strong); }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-featured {
+    background: rgba(249, 115, 22, 0.16);
+    border-color: rgba(249, 115, 22, 0.55);
+    color: #ffedd5;
+  }
+  .btn-featured:hover:not(:disabled) {
+    background: rgba(249, 115, 22, 0.26);
+    border-color: rgba(249, 115, 22, 0.8);
+  }
+  .demo-num {
+    width: 19px;
+    height: 19px;
+    border-radius: 5px;
+    background: var(--surface-3);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+  }
+  .btn-featured .demo-num { background: var(--accent); color: #080b11; }
+  .btn-approve { background: var(--emerald); border-color: var(--emerald); color: #052017; font-weight: 700; }
+  .btn-approve:hover:not(:disabled) { background: #34d399; border-color: #34d399; }
+  .btn-reject { background: var(--rose-soft); border-color: rgba(239, 68, 68, 0.45); color: #fecaca; }
+  .btn-reject:hover:not(:disabled) { background: rgba(239, 68, 68, 0.25); }
+  .btn-sm { padding: 6px 10px; font-size: 11.5px; }
+  .btn-xs { padding: 3px 7px; font-size: 10.5px; border-radius: 5px; }
+
+  /* APPROVAL CARD */
+  #approvalCard {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 15px;
+    border-radius: 9px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1.5px solid rgba(245, 158, 11, 0.68);
+  }
+  #approvalCard.visible { display: flex; }
+  .ap-desc { font-size: 12.5px; color: var(--text); }
+  .ap-desc strong { color: #fcd34d; }
+  .ap-btns { display: flex; gap: 8px; }
+
+  /* 4 LIVE STATUS TILES */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  @media (max-width: 780px) {
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  .stat-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-tile.full { border-color: rgba(239, 68, 68, 0.48); background: rgba(239, 68, 68, 0.08); }
+  .stat-tile.active { border-color: rgba(56, 189, 248, 0.48); background: rgba(56, 189, 248, 0.08); }
+  .stat-tile.warn { border-color: rgba(245, 158, 11, 0.55); background: rgba(245, 158, 11, 0.08); }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--text-2); display: flex; justify-content: space-between; }
+  .stat-state { font-size: 10px; font-weight: 700; color: var(--emerald); }
+  .stat-tile.full .stat-state { color: #fca5a5; }
+  .stat-tile.active .stat-state { color: #7dd3fc; }
+  .stat-tile.warn .stat-state { color: #fcd34d; }
+  .stat-big { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 800; line-height: 1; }
+  .stat-big span { font-size: 12px; font-weight: 600; color: var(--text-3); }
+  .meter { height: 3.5px; border-radius: 99px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+  .meter-bar { height: 100%; width: 100%; transform-origin: left center; transform: scaleX(0); background: var(--emerald); transition: transform 220ms var(--ease), background-color 180ms var(--ease); }
+
+  /* INSPECTOR PANEL (AI DECISION / PARKED DB / AUDIT) */
+  .inspector-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .seg-bar {
+    display: inline-flex;
+    gap: 4px;
+  }
+  .seg-btn {
+    padding: 6px 12px;
+    font-size: 11.5px;
+    color: var(--text-2);
+    background: transparent;
+    border-color: transparent;
+  }
+  .seg-btn:hover { background: var(--surface-2); color: var(--text); }
+  .seg-btn.active { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
+
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  .loop-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  @media (max-width: 900px) { .loop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .loop-step {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--text-3);
+    border-radius: 7px;
+    padding: 9px 11px;
+  }
+  .loop-step.s-sense { border-left-color: var(--sky); }
+  .loop-step.s-think { border-left-color: #a78bfa; }
+  .loop-step.s-act { border-left-color: var(--emerald); }
+  .loop-step.s-explain { border-left-color: var(--amber); }
+  .loop-step.s-guard { border-left-color: var(--rose); background: rgba(239, 68, 68, 0.08); }
+  .loop-label { font-family: var(--mono); font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 3px; display: flex; justify-content: space-between; }
+  .s-sense .loop-label { color: #7dd3fc; }
+  .s-think .loop-label { color: #ddd6fe; }
+  .s-act .loop-label { color: #6ee7b7; }
+  .s-explain .loop-label { color: #fde68a; }
+  .s-guard .loop-label { color: #fca5a5; }
+  .loop-text { font-size: 12px; color: var(--text); line-height: 1.4; }
+
+  .table-wrap { max-height: 220px; overflow-y: auto; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .data-table th, .data-table td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--border); }
+  .data-table th { color: var(--text-3); font-size: 9.5px; text-transform: uppercase; position: sticky; top: 0; background: var(--surface); }
+  .tag-ok { color: #6ee7b7; font-weight: 600; }
+  .tag-pend { color: #fcd34d; font-weight: 600; }
+  .tag-rej { color: #fca5a5; font-weight: 600; }
+
+  #tooltip {
+    position: fixed;
+    pointer-events: none;
+    z-index: 60;
+    background: rgba(14, 18, 27, 0.96);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 8px 11px;
+    font-size: 11.5px;
+    color: var(--text);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+    display: none;
+    min-width: 170px;
+  }
+  #tooltip .tt-head { font-weight: 700; margin-bottom: 3px; display: flex; justify-content: space-between; gap: 10px; }
+  #tooltip .tt-row { color: var(--text-2); font-size: 11px; line-height: 1.45; }
+  #tooltip .tt-hint { color: var(--sky); font-size: 10.5px; margin-top: 4px; font-weight: 600; }
+
+  #toastWrap {
+    position: fixed;
+    bottom: 18px;
+    right: 22px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    max-width: 320px;
+  }
+  .toast {
+    background: rgba(14, 18, 27, 0.96);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--sky);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  }
+  .toast.ok { border-left-color: var(--emerald); }
+  .toast.warn { border-left-color: var(--amber); }
+  .toast.err { border-left-color: var(--rose); }
+
+  @keyframes dashFlow { to { stroke-dashoffset: -36; } }
+  .route-flow { animation: dashFlow 1s linear infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .route-flow { animation: none; }
+    * { transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <div class="brand-mark">CF</div>
+      <span class="brand-name">CampusFlow</span>
+      <span class="brand-sub">Parking &amp; Fleet Operations Agent</span>
+    </a>
+    <nav class="nav-links" aria-label="Workspaces">
+      <a href="/">Home</a>
+      <a href="/fleet" aria-current="page">Vehicle Fleet</a>
+      <a href="/resources">College Resources</a>
+    </nav>
+    <div class="top-right">
+      <span class="clock" id="simClock">14:00:00 IST</span>
+      <button type="button" class="btn-sm" id="btnSpeed">1.5× Speed</button>
+      <button type="button" class="btn-sm" id="btnPause">Pause</button>
+    </div>
+  </header>
+
+  <!-- Compatibility hooks preserved for automated route tests -->
+  <nav id="subtabs" hidden></nav>
+  <dialog id="audit-dialog"></dialog>
+
+  <main id="operation" class="page">
+    <!-- TOP: TWO SCREENS (LEFT: EMPTY + LOAD CLIP | RIGHT: MAP ONLY) -->
+    <section class="screens-row" aria-label="Fleet simulation screens">
+      <!-- LEFT SCREEN: EMPTY FOR NOW + LOAD CLIP BUTTON -->
+      <div class="screen-box">
+        <div class="clip-screen" id="clipViewport">
+          <video id="clipPlayer" class="clip-video" playsinline muted hidden></video>
+        </div>
+        <div class="clip-bar">
+          <span class="clip-meta" id="clipStatus"></span>
+          <button type="button" class="btn-sm" id="btnLoadClip">Load Clip</button>
+        </div>
+      </div>
+
+      <!-- RIGHT SCREEN: MAP ONLY -->
+      <div class="screen-box">
+        <div class="map-screen">
+          <div class="story-pill" id="storyPill">
+            <span class="story-dot"></span>
+            <span id="storyText">3 cameras online — use the controls below or click any parked car/bike to remove it.</span>
+          </div>
+          <svg id="simSvg" viewBox="0 0 1264 848" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <filter id="glowSky" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="glowAmber" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+
+            <image href="/static/fleet-map.jpg" x="0" y="0" width="1264" height="848" />
+
+            <g font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="800" font-size="10" letter-spacing="0.05em">
+              <rect x="564" y="742" width="138" height="22" rx="6" fill="rgba(8,11,17,0.9)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+              <text x="600" y="756.5" text-anchor="middle" fill="#6ee7b7">ENTRY ▲</text>
+              <line x1="633" y1="746" x2="633" y2="760" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+              <text x="666" y="756.5" text-anchor="middle" fill="#fca5a5">▼ EXIT</text>
+            </g>
+
+            <g id="routeLayer"></g>
+            <g id="slotsLayer"></g>
+            <g id="camerasLayer"></g>
+            <g id="vehiclesLayer"></g>
+
+            <g id="signJunctionGroup" style="cursor:pointer;">
+              <line x1="574" y1="506" x2="554" y2="484" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="3 2"/>
+              <circle cx="575" cy="508" r="6.5" fill="#0e121b" stroke="#f59e0b" stroke-width="2.2"/>
+              <circle cx="575" cy="508" r="2.6" fill="#fbbf24"/>
+
+              <rect id="signBox" x="348" y="418" width="238" height="66" rx="8" fill="#070a10" stroke="#38bdf8" stroke-width="2"/>
+              <rect x="353" y="423" width="228" height="15" rx="4" fill="#131c2e"/>
+              <circle id="signLedDot" cx="362" cy="430.5" r="3.2" fill="#10b981"/>
+              <text x="371" y="434" fill="#93c5fd" font-family="ui-monospace, monospace" font-size="8.6" font-weight="800" letter-spacing="0.06em">SIGN_JUNCTION · LIVE</text>
+              <text id="signLine1" x="358" y="454" fill="#4ade80" font-family="ui-monospace, monospace" font-size="8.9" font-weight="800">BIKE LOT 1: OPEN (LEFT)</text>
+              <text id="signLine2" x="358" y="470" fill="#4ade80" font-family="ui-monospace, monospace" font-size="8.9" font-weight="800">CAR LOT: OPEN (RIGHT)</text>
+            </g>
+          </svg>
+        </div>
+        <div class="map-legend">
+          <div class="legend-items">
+            <span class="legend-item"><span class="swatch" style="background:rgba(16,185,129,0.3);border:1.5px solid #10b981;"></span>Open</span>
+            <span class="legend-item"><span class="swatch" style="background:rgba(239,68,68,0.5);border:1.5px solid #f87171;"></span>Parked (Click to exit)</span>
+            <span class="legend-item"><span class="swatch" style="background:rgba(56,189,248,0.3);border:1.5px solid #38bdf8;"></span>♿ Accessible</span>
+            <span class="legend-item"><span class="swatch" style="background:#0e121b;border:1.5px solid #38bdf8;border-radius:99px;"></span>3 Cameras (Gate, Car, Bike)</span>
+          </div>
+          <span style="color:var(--text-3);font-family:var(--mono);font-size:10.5px;">Synthetic data · Saved in local DB</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOTTOM: ALL SIMULATION SIDEBAR BUTTONS & TELEMETRY OUTSIDE THE SCREEN BOXES -->
+    <section class="controls-deck" aria-label="Simulation controls">
+      <!-- Approval prompt when Car Lot is full -->
+      <div id="approvalCard">
+        <div class="ap-desc" id="apDesc"><strong>Attendant Approval Needed:</strong> Car lot is full (30/30). Route visiting car straight ahead and right to Overflow?</div>
+        <div class="ap-btns">
+          <button type="button" class="btn-approve" id="btnApproveOv">Approve Overflow ↗</button>
+          <button type="button" class="btn-reject" id="btnRejectOv">Reject &amp; Exit</button>
+        </div>
+      </div>
+
+      <!-- All Simulation Buttons (outside the screens) -->
+      <div class="deck-row">
+        <div class="btn-strip">
+          <button type="button" class="btn-featured" id="btnDemo1">
+            <span class="demo-num">1</span> Car Lot Full → Overflow Approval
+          </button>
+          <button type="button" id="btnDemo2">
+            <span class="demo-num">2</span> Bike Lot Full → Right Perimeter Redirect
+          </button>
+          <button type="button" id="btnDemo3">
+            <span class="demo-num">3</span> Test Duplicate Scan Guard
+          </button>
+        </div>
+        <div class="btn-strip">
+          <button type="button" id="btnAddCar">+ Car</button>
+          <button type="button" id="btnRemCar">− Car</button>
+          <button type="button" id="btnAddBike">+ Bike</button>
+          <button type="button" id="btnRemBike">− Bike</button>
+          <button type="button" id="btnReset">Reset</button>
+        </div>
+      </div>
+
+      <!-- Live Parking Status Tiles -->
+      <div class="stats-grid">
+        <div class="stat-tile" id="tileCar">
+          <div class="stat-label"><span>Cars</span><span class="stat-state" id="stCar">Open</span></div>
+          <div class="stat-big"><b id="numCar">0</b><span> / 30</span></div>
+          <div class="meter"><div class="meter-bar" id="barCar"></div></div>
+        </div>
+        <div class="stat-tile" id="tileBike1">
+          <div class="stat-label"><span>Bikes (Main)</span><span class="stat-state" id="stBike1">Open</span></div>
+          <div class="stat-big"><b id="numBike1">0</b><span> / 64</span></div>
+          <div class="meter"><div class="meter-bar" id="barBike1"></div></div>
+        </div>
+        <div class="stat-tile" id="tileBike2">
+          <div class="stat-label"><span>Bike Zone 2</span><span class="stat-state" id="stBike2" style="color:var(--text-3);">Standby</span></div>
+          <div class="stat-big"><b id="numBike2">0</b><span> / 18</span></div>
+          <div class="meter"><div class="meter-bar" id="barBike2"></div></div>
+        </div>
+        <div class="stat-tile" id="tileOverflow">
+          <div class="stat-label"><span>Car Overflow</span><span class="stat-state" id="stOv" style="color:var(--text-3);">Ready</span></div>
+          <div class="stat-big"><b id="numOv">0</b><span> routed</span></div>
+          <div class="meter"><div class="meter-bar" id="barOv" style="background:var(--amber);"></div></div>
+        </div>
+      </div>
+
+      <!-- AI Decision / Parked DB / Audit Tabs -->
+      <div class="inspector-box">
+        <div class="seg-bar">
+          <button type="button" class="seg-btn active" data-pane="paneLoop">AI Decision</button>
+          <button type="button" class="seg-btn" data-pane="paneDb">Parked (<span id="dbCount">0</span>)</button>
+          <button type="button" class="seg-btn" data-pane="paneAudit">Audit (<span id="auditCount">0</span>)</button>
+        </div>
+
+        <div class="pane active" id="paneLoop">
+          <div class="loop-grid">
+            <div class="loop-step s-sense">
+              <div class="loop-label"><span>1 · Sense</span><span id="timeSense">—</span></div>
+              <div class="loop-text" id="txtSense">Cameras monitoring Main Gate, Car Lot, and Bike Lot.</div>
+            </div>
+            <div class="loop-step s-think">
+              <div class="loop-label"><span>2 · Think</span><span>Policy &amp; Rules</span></div>
+              <div class="loop-text" id="txtThink">Checks live DB counts, keeps cars and bikes separated, protects ♿ bays.</div>
+            </div>
+            <div class="loop-step s-act" id="stepAct">
+              <div class="loop-label"><span>3 · Act</span><span>Sign &amp; Routing</span></div>
+              <div class="loop-text" id="txtAct">Assigns open bays automatically; asks attendant before car overflow.</div>
+            </div>
+            <div class="loop-step s-explain">
+              <div class="loop-label"><span>4 · Explain &amp; Verify</span><span>DB Readback</span></div>
+              <div class="loop-text" id="txtExplain">Confirms vehicle parked in bay and writes record to persistent DB.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane" id="paneDb">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:var(--text-2);">
+            <span id="dbSummary">0 vehicles in DB</span>
+            <button type="button" class="btn-xs" id="btnEmptyDb">Clear All</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Bay</th><th>Vehicle</th><th>Parked</th><th style="text-align:right;">Remove</th></tr></thead>
+              <tbody id="dbBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="pane" id="paneAudit">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Time</th><th>Event</th><th>Why / Ruled Out</th><th>Result</th></tr></thead>
+              <tbody id="auditBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="tooltip"></div>
+  <div id="toastWrap"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const DB_KEY = 'campusflow_parking_db_v3';
+
+  /* ================= LEFT SCREEN: SEQUENTIAL CLIP LOADER (EMPTY FOR NOW) ================= */
+  // Add clip URLs here in the future (e.g. '/static/clips/clip1.mp4', '/static/clips/clip2.mp4')
+  // and every press of "Load Clip" will play them sequentially one after another.
+  const CLIP_QUEUE = [];
+  let clipIndex = -1;
+
+  document.getElementById('btnLoadClip').addEventListener('click', () => {
+    const player = document.getElementById('clipPlayer');
+    const status = document.getElementById('clipStatus');
+    if (!CLIP_QUEUE.length) {
+      status.textContent = 'No clips loaded yet';
+      return;
+    }
+    clipIndex = (clipIndex + 1) % CLIP_QUEUE.length;
+    const item = CLIP_QUEUE[clipIndex];
+    const url = typeof item === 'string' ? item : item.url;
+    const label = typeof item === 'string' ? `Clip ${clipIndex + 1}` : (item.label || `Clip ${clipIndex + 1}`);
+    player.hidden = false;
+    player.src = url;
+    player.currentTime = 0;
+    player.play().catch(() => {});
+    status.textContent = `${label} (${clipIndex + 1}/${CLIP_QUEUE.length})`;
+  });
+
+  /* ================= RIGHT SCREEN: EXACT e:\campusflow_parking_sim.html ENGINE ================= */
+  const CAR_COLORS = ['#38bdf8', '#60a5fa', '#e2e8f0', '#fbbf24', '#a78bfa', '#34d399'];
+  const BIKE_COLORS = ['#34d399', '#fb923c', '#f472b6', '#38bdf8', '#facc15'];
+
+  const CAMERAS = [
+    { id: 'CAM-1', name: 'Main Gate Camera', x: 633, y: 696, fovAngle: 90, fovSpan: 76, fovLen: 88, role: 'Reads left Entry & right Exit lanes' },
+    { id: 'CAM-2', name: 'Car Lot Camera',   x: 748, y: 498, fovAngle: -28, fovSpan: 64, fovLen: 125, role: 'Verifies 30 car bays & commits DB' },
+    { id: 'CAM-3', name: 'Bike Lot Camera',  x: 356, y: 568, fovAngle: -118, fovSpan: 64, fovLen: 120, role: 'Verifies 64 bike bays & triggers Zone 2' }
+  ];
+
+  const CAR_Y_LINES = [233, 261, 288, 315, 342, 369, 396, 424, 452, 479, 506];
+
+  function buildSlots() {
+    const slots = [];
+    const carCols = [
+      { colIdx: 0, prefix: 'C-A', x: 855, w: 41, parkAngle: 180 },
+      { colIdx: 1, prefix: 'C-B', x: 944, w: 41, parkAngle: 0 },
+      { colIdx: 2, prefix: 'C-C', x: 991, w: 41, parkAngle: 180 }
+    ];
+    carCols.forEach(c => {
+      for (let i = 0; i < 10; i++) {
+        const y0 = CAR_Y_LINES[i] + 2;
+        const h = (CAR_Y_LINES[i + 1] - CAR_Y_LINES[i]) - 4;
+        slots.push({
+          id: `${c.prefix}${String(i + 1).padStart(2, '0')}`,
+          zone: 'ZONE_CAR',
+          vehicleType: 'CAR',
+          accessible: (c.colIdx === 0 && i >= 8),
+          x: c.x, y: y0, w: c.w, h,
+          cx: c.x + c.w / 2, cy: y0 + h / 2,
+          angle: 0, parkAngle: c.parkAngle, colIdx: c.colIdx,
+          status: 'AVAILABLE', vehicleId: null, vehicleColor: null, parkedAt: null
+        });
+      }
+    });
+
+    let b1 = 1;
+    const addB1 = (cx, cy, angle, aisleType) => {
+      slots.push({
+        id: `B1-${String(b1++).padStart(2, '0')}`,
+        zone: 'ZONE_BIKE_1',
+        vehicleType: 'BIKE',
+        accessible: false,
+        x: cx - 10, y: cy - 6, w: 20, h: 12,
+        cx, cy, angle, parkAngle: angle, aisleType,
+        status: 'AVAILABLE', vehicleId: null, vehicleColor: null, parkedAt: null
+      });
+    };
+    for (let i = 0; i < 20; i++) { const y = 192 + i * 23.0; addB1(264 - 0.214 * (y - 192), y, 12, 'WEST'); }
+    for (let i = 0; i < 10; i++) { const y = 418 + i * 17.5; addB1(261 - 0.138 * (y - 418), y, 10, 'WEST'); }
+    for (let i = 0; i < 20; i++) { const y = 196 + i * 19.9; addB1(339 - 0.095 * (y - 196), y, 186, 'EAST'); }
+    [
+      [242, 640, 195], [234, 660, 208], [224, 680, 224], [208, 696, 245],
+      [186, 706, 265], [164, 710, 270], [142, 711, 270], [120, 712, 270],
+      [98,  713, 270], [76,  714, 270], [54,  715, 270], [32,  716, 270],
+      [12,  717, 270], [174, 636, 12]
+    ].forEach(([x, y, ang]) => addB1(x, y, ang, 'BEND'));
+
+    [
+      [810, 566, 17], [838, 574, 17], [866, 583, 17], [894, 591, 17],
+      [922, 600, 17], [950, 608, 17], [978, 617, 17], [1006, 625, 17],
+      [1034, 634, 17], [1062, 642, 17], [1090, 649, 14], [1118, 654, 4],
+      [1148, 650, -22], [1168, 632, -62], [1178, 602, -74], [1186, 572, -74],
+      [1194, 542, -74], [1202, 512, -74]
+    ].forEach(([cx, cy, ang], idx) => {
+      slots.push({
+        id: `B2-${String(idx + 1).padStart(2, '0')}`,
+        zone: 'ZONE_BIKE_2',
+        vehicleType: 'BIKE',
+        accessible: false,
+        x: cx - 10, y: cy - 6, w: 20, h: 12,
+        cx, cy, angle: ang, parkAngle: ang,
+        status: 'LOCKED', vehicleId: null, vehicleColor: null, parkedAt: null
+      });
+    });
+
+    return slots;
+  }
+
+  const ENTRY_TO_JUNCTION = [
+    { x: 598, y: 834 },
+    { x: 598, y: 706, camId: 'CAM-1' },
+    { x: 608, y: 556, pauseMs: 320 }
+  ];
+  const EXIT_FROM_JUNCTION = [
+    { x: 662, y: 566 },
+    { x: 666, y: 706, camId: 'CAM-1' },
+    { x: 666, y: 838 }
+  ];
+
+  function getOverflowPath(fromPt = null) {
+    const start = fromPt ? [{ x: fromPt.x, y: fromPt.y }] : ENTRY_TO_JUNCTION.map(p => ({ ...p }));
+    return start.concat([
+      { x: 614, y: 360 }, { x: 614, y: 120 }, { x: 614, y: 52 },
+      { x: 715, y: 48 }, { x: 815, y: 42 }, { x: 910, y: 26 }, { x: 1015, y: -12 }
+    ]);
+  }
+
+  function getEntryPath(slot) {
+    const pts = ENTRY_TO_JUNCTION.map(p => ({ ...p }));
+    if (slot.zone === 'ZONE_CAR') {
+      pts.push({ x: 690, y: 534 }, { x: 752, y: 526, camId: 'CAM-2' }, { x: 782, y: 540 });
+      if (slot.colIdx <= 1) {
+        pts.push({ x: 850, y: 562 }, { x: 920, y: 580 }, { x: 920, y: slot.cy }, { x: slot.cx, y: slot.cy });
+      } else {
+        pts.push({ x: 850, y: 562 }, { x: 920, y: 582 }, { x: 1005, y: 606 }, { x: 1056, y: 606 }, { x: 1056, y: slot.cy }, { x: slot.cx, y: slot.cy });
+      }
+    } else if (slot.zone === 'ZONE_BIKE_1') {
+      pts.push({ x: 540, y: 582 }, { x: 380, y: 598, camId: 'CAM-3' }, { x: 278, y: 608 });
+      if (slot.aisleType === 'BEND') {
+        pts.push({ x: 245, y: 626 });
+        if (slot.cx < 200) pts.push({ x: 208, y: 676 }, { x: 168, y: 694 }, { x: slot.cx, y: 696 });
+        pts.push({ x: slot.cx, y: slot.cy });
+      } else {
+        const lx = y => 296 - 0.175 * (y - 195);
+        pts.push({ x: lx(595), y: 595 }, { x: lx(slot.cy), y: slot.cy }, { x: slot.cx, y: slot.cy });
+      }
+    } else if (slot.zone === 'ZONE_BIKE_2') {
+      pts.push({ x: 690, y: 534 }, { x: 752, y: 526, camId: 'CAM-2' }, { x: 778, y: 548 });
+      const perim = [
+        { x: 810, y: 566 }, { x: 894, y: 591 }, { x: 978, y: 617 },
+        { x: 1062, y: 642 }, { x: 1120, y: 654 }, { x: 1154, y: 648 },
+        { x: 1172, y: 622 }, { x: 1186, y: 572 }, { x: 1202, y: 512 }
+      ];
+      for (const wp of perim) {
+        pts.push(wp);
+        if (Math.hypot(wp.x - slot.cx, wp.y - slot.cy) < 42) break;
+      }
+      pts.push({ x: slot.cx, y: slot.cy });
+    }
+    return pts;
+  }
+
+  function getExitPath(slot) {
+    const pts = [{ x: slot.cx, y: slot.cy }];
+    if (slot.zone === 'ZONE_CAR') {
+      if (slot.colIdx <= 1) {
+        pts.push({ x: 920, y: slot.cy }, { x: 920, y: 580 }, { x: 850, y: 562 }, { x: 782, y: 540 }, { x: 752, y: 526, camId: 'CAM-2' }, { x: 695, y: 542 });
+      } else {
+        pts.push({ x: 1056, y: slot.cy }, { x: 1056, y: 606 }, { x: 1005, y: 606 }, { x: 920, y: 582 }, { x: 782, y: 540 }, { x: 752, y: 526, camId: 'CAM-2' }, { x: 695, y: 542 });
+      }
+    } else if (slot.zone === 'ZONE_BIKE_1') {
+      if (slot.aisleType === 'BEND') {
+        if (slot.cx < 200) pts.push({ x: slot.cx, y: 696 }, { x: 168, y: 694 }, { x: 208, y: 676 });
+        pts.push({ x: 245, y: 626 }, { x: 278, y: 608 });
+      } else {
+        const lx = y => 296 - 0.175 * (y - 195);
+        pts.push({ x: lx(slot.cy), y: slot.cy }, { x: lx(595), y: 595 }, { x: 278, y: 608 });
+      }
+      pts.push({ x: 380, y: 598, camId: 'CAM-3' }, { x: 540, y: 582 }, { x: 626, y: 580 });
+    } else if (slot.zone === 'ZONE_BIKE_2') {
+      const rev = [
+        { x: 1202, y: 512 }, { x: 1186, y: 572 }, { x: 1172, y: 622 },
+        { x: 1154, y: 648 }, { x: 1120, y: 654 }, { x: 1062, y: 642 },
+        { x: 978, y: 617 }, { x: 894, y: 591 }, { x: 810, y: 566 }
+      ];
+      let on = false;
+      for (const wp of rev) {
+        if (!on && Math.hypot(wp.x - slot.cx, wp.y - slot.cy) < 75) on = true;
+        if (on) pts.push(wp);
+      }
+      pts.push({ x: 778, y: 548 }, { x: 752, y: 526, camId: 'CAM-2' }, { x: 695, y: 542 });
+    }
+    return pts.concat(EXIT_FROM_JUNCTION.map(p => ({ ...p })));
+  }
+
+  const state = {
+    slots: buildSlots(),
+    vehicles: [],
+    parkedDb: new Map(),
+    overflowRoutedCount: 0,
+    overflowApproved: false,
+    pendingApproval: null,
+    bike2Active: false,
+    camFlash: {},
+    simSeconds: 14 * 3600,
+    paused: false,
+    speed: 1.5,
+    carSeq: 101,
+    bikeSeq: 401,
+    auditLog: [],
+    demoTimers: []
+  };
+
+  function saveDb() {
+    try {
+      localStorage.setItem(DB_KEY, JSON.stringify({
+        simSeconds: state.simSeconds,
+        carSeq: state.carSeq,
+        bikeSeq: state.bikeSeq,
+        overflowRoutedCount: state.overflowRoutedCount,
+        overflowApproved: state.overflowApproved,
+        parked: Array.from(state.parkedDb.entries())
+      }));
+    } catch (_) {}
+  }
+
+  function loadDb() {
+    try {
+      const raw = localStorage.getItem(DB_KEY);
+      if (!raw) return false;
+      const d = JSON.parse(raw);
+      if (!Array.isArray(d.parked)) return false;
+      state.slots = buildSlots();
+      state.parkedDb.clear();
+      state.simSeconds = d.simSeconds || 14 * 3600;
+      state.carSeq = d.carSeq || 101;
+      state.bikeSeq = d.bikeSeq || 401;
+      state.overflowRoutedCount = d.overflowRoutedCount || 0;
+      state.overflowApproved = !!d.overflowApproved;
+      d.parked.forEach(([id, rec]) => {
+        const s = state.slots.find(x => x.id === rec.slotId);
+        if (s) {
+          s.status = 'OCCUPIED';
+          s.vehicleId = id;
+          s.vehicleColor = rec.color;
+          s.parkedAt = rec.parkedAt;
+          state.parkedDb.set(id, rec);
+        }
+      });
+      return true;
+    } catch (_) { return false; }
+  }
+
+  function fmtTime(sec = state.simSeconds) {
+    const s = Math.floor(sec) % 86400;
+    return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60]
+      .map(n => String(n).padStart(2, '0')).join(':');
+  }
+
+  function zoneStats(zone) {
+    const list = state.slots.filter(s => s.zone === zone);
+    const occupied = list.filter(s => s.status === 'OCCUPIED').length;
+    const avail = list.filter(s => s.status === 'AVAILABLE').length;
+    return { total: list.length, occupied, avail, list };
+  }
+
+  function setStory(text, tone = '') {
+    const pill = document.getElementById('storyPill');
+    pill.className = 'story-pill' + (tone ? ` ${tone}` : '');
+    document.getElementById('storyText').textContent = text;
+  }
+
+  function setAiLoop({ sense, think, act, explain, guard = false }) {
+    document.getElementById('timeSense').textContent = fmtTime();
+    document.getElementById('txtSense').textContent = sense;
+    document.getElementById('txtThink').textContent = think;
+    document.getElementById('txtAct').textContent = act;
+    document.getElementById('txtExplain').textContent = explain;
+    document.getElementById('stepAct').className = guard ? 'loop-step s-guard' : 'loop-step s-act';
+  }
+
+  function addAudit(event, why, result, cls = 'ok') {
+    state.auditLog.unshift({ time: fmtTime(), event, why, result, cls });
+    document.getElementById('auditCount').textContent = state.auditLog.length;
+    renderAudit();
+  }
+
+  function toast(msg, type = 'info') {
+    const wrap = document.getElementById('toastWrap');
+    const node = document.createElement('div');
+    node.className = `toast ${type}`;
+    node.textContent = msg;
+    wrap.appendChild(node);
+    setTimeout(() => node.remove(), 3000);
+  }
+
+  function flashCam(id) {
+    state.camFlash[id] = performance.now() + 850;
+    renderCameras();
+  }
+
+  function updateSignJunction() {
+    const car = zoneStats('ZONE_CAR');
+    const b1 = zoneStats('ZONE_BIKE_1');
+    const b1Full = b1.avail === 0;
+    const carFull = car.avail === 0;
+
+    if (!carFull && state.overflowApproved) state.overflowApproved = false;
+
+    if (b1Full && !state.bike2Active) {
+      state.bike2Active = true;
+      state.slots.filter(s => s.zone === 'ZONE_BIKE_2').forEach(s => { if (s.status === 'LOCKED') s.status = 'AVAILABLE'; });
+    } else if (!b1Full && state.bike2Active) {
+      state.bike2Active = false;
+      state.slots.filter(s => s.zone === 'ZONE_BIKE_2').forEach(s => { if (s.status === 'AVAILABLE') s.status = 'LOCKED'; });
+    }
+
+    let l1 = 'BIKE LOT 1: OPEN (LEFT)';
+    let l2 = 'CAR LOT: OPEN (RIGHT)';
+    let col = '#4ade80', stroke = '#38bdf8';
+
+    if (b1Full && carFull && state.overflowApproved) {
+      l1 = 'BIKE 1: FULL → ZONE 2 (RIGHT)';
+      l2 = 'CAR: FULL → OVERFLOW AHEAD ↗';
+      col = '#fbbf24'; stroke = '#f59e0b';
+    } else if (b1Full) {
+      l1 = 'BIKE LOT 1: FULL → BIKE ZONE 2';
+      l2 = '(RIGHT PERIMETER) | CAR: OPEN';
+      col = '#fbbf24'; stroke = '#f59e0b';
+    } else if (carFull && state.overflowApproved) {
+      l1 = 'CAR LOT: FULL → OVERFLOW';
+      l2 = 'STRAIGHT AHEAD → TURN RIGHT ↗';
+      col = '#fbbf24'; stroke = '#f59e0b';
+    } else if (carFull && state.pendingApproval) {
+      l1 = 'CAR LOT: FULL (AWAITING OK)';
+      l2 = 'BIKE LOT 1: OPEN (LEFT)';
+      col = '#f87171'; stroke = '#ef4444';
+    } else if (carFull) {
+      l1 = 'CAR LOT: FULL';
+      l2 = 'BIKE LOT 1: OPEN (LEFT)';
+      col = '#f87171'; stroke = '#ef4444';
+    }
+
+    document.getElementById('signLine1').textContent = l1;
+    document.getElementById('signLine2').textContent = l2;
+    document.getElementById('signLine1').setAttribute('fill', col);
+    document.getElementById('signLine2').setAttribute('fill', col);
+    document.getElementById('signBox').setAttribute('stroke', stroke);
+    document.getElementById('signLedDot').setAttribute('fill', col);
+    renderRoutes();
+  }
+
+  function commitPark(vehId, slot, color) {
+    const ts = fmtTime();
+    slot.status = 'OCCUPIED';
+    slot.vehicleId = vehId;
+    slot.vehicleColor = color;
+    slot.parkedAt = ts;
+    state.parkedDb.set(vehId, { slotId: slot.id, zone: slot.zone, vehicleType: slot.vehicleType, color, parkedAt: ts });
+    flashCam(slot.zone === 'ZONE_CAR' ? 'CAM-2' : 'CAM-3');
+    saveDb();
+    updateSignJunction();
+    renderSlots();
+    renderDb();
+    updateStats();
+  }
+
+  function spawnVehicle({ id, type, color, path, mode, onArrive }) {
+    const v = { id, type, color, path, segIdx: 0, segT: 0, x: path[0].x, y: path[0].y, angle: -90, pauseLeft: 0, mode, onArrive };
+    state.vehicles.push(v);
+    return v;
+  }
+
+  function addCar(customId = null) {
+    const id = customId || `CAR-${state.carSeq++}`;
+    const color = CAR_COLORS[state.carSeq % CAR_COLORS.length];
+
+    if (state.parkedDb.has(id) || state.vehicles.some(v => v.id === id)) {
+      flashCam('CAM-1');
+      setStory(`Duplicate blocked — ${id} is already parked in the DB.`, 'alert');
+      setAiLoop({
+        sense: `Gate camera (CAM-1) scanned ${id} entering left lane.`,
+        think: `Hard rule triggered: ${id} is already active in the live parking database.`,
+        act: `Blocked duplicate entry — no second bay allocated.`,
+        explain: `Capacity count protected against scanner bounce or duplicate read.`,
+        guard: true
+      });
+      addAudit(`DUP · ${id}`, 'Already active in DB', 'Blocked', 'rej');
+      toast(`Duplicate scan blocked for ${id}`, 'err');
+      return;
+    }
+
+    flashCam('CAM-1');
+    const car = zoneStats('ZONE_CAR');
+    const std = car.list.filter(s => s.status === 'AVAILABLE' && !s.accessible);
+    const acc = car.list.filter(s => s.status === 'AVAILABLE' && s.accessible);
+    const chosen = std[0] || acc[0] || null;
+
+    if (chosen) {
+      chosen.status = 'INBOUND';
+      chosen.vehicleId = id;
+      chosen.vehicleColor = color;
+      setStory(`${id} entering → routed right to Car bay ${chosen.id}.`);
+      setAiLoop({
+        sense: `CAM-1 detected ${id} at left Entry gate. Car lot has ${car.avail} open bay(s).`,
+        think: `Normal car bay available (${chosen.id}). Preserved ♿ bays first; overflow not needed.`,
+        act: `Reserved ${chosen.id} and guided ${id} right into Car Lot.`,
+        explain: `Waiting for CAM-2 arrival confirmation to commit ${chosen.id} to DB.`
+      });
+
+      spawnVehicle({
+        id, type: 'CAR', color, path: getEntryPath(chosen), mode: 'ARRIVE',
+        onArrive: () => {
+          commitPark(id, chosen, color);
+          setAiLoop({
+            sense: `CAM-2 confirmed ${id} parked inside bay ${chosen.id}.`,
+            think: `Bay verified occupied; live DB updated (${zoneStats('ZONE_CAR').occupied}/30).`,
+            act: `Kept ${id} permanently parked in ${chosen.id}.`,
+            explain: `Click ${chosen.id} on the map or click − Car anytime to release this bay.`
+          });
+          addAudit(`PARK · ${id}`, `Car lot open → ${chosen.id}`, 'Stored in DB', 'ok');
+        }
+      });
+
+      updateSignJunction();
+      renderSlots();
+      updateStats();
+      return;
+    }
+
+    if (state.overflowApproved) {
+      routeToOverflow(id, color, null, 'Pre-Approved');
+      return;
+    }
+    if (state.pendingApproval) {
+      toast(`Approve or reject ${state.pendingApproval.id} first.`, 'warn');
+      return;
+    }
+
+    const holdPath = [{ x: 598, y: 834 }, { x: 598, y: 706, camId: 'CAM-1' }, { x: 608, y: 568 }];
+    spawnVehicle({ id, type: 'CAR', color, path: holdPath, mode: 'HOLD', onArrive: () => {} });
+    state.pendingApproval = { id, color };
+
+    setStory(`Car Lot FULL (30/30) — waiting for Attendant to approve Overflow for ${id}.`, 'warn');
+    setAiLoop({
+      sense: `CAM-1 scanned ${id}, while Car Lot DB is 30/30 FULL.`,
+      think: `Bike Lot ruled out (wrong vehicle class). External Overflow (straight ahead & right) requires human sign-off.`,
+      act: `Paused ${id} at junction and requested Parking Attendant approval.`,
+      explain: `Click "Approve Overflow ↗" below to update SIGN_JUNCTION and dispatch.`
+    });
+    addAudit(`OV_REQ · ${id}`, 'Car lot 30/30 full; Bike ruled out', 'Awaiting Approval', 'pend');
+
+    updateSignJunction();
+    renderApproval();
+    updateStats();
+  }
+
+  function routeToOverflow(id, color, fromPt, note) {
+    state.overflowRoutedCount += 1;
+    saveDb();
+    setStory(`Overflow approved — ${id} heading straight ahead & turning right ↗`, 'warn');
+    setAiLoop({
+      sense: `Attendant approved Overflow redirect for ${id}.`,
+      think: `Switching SIGN_JUNCTION so oncoming cars bypass the full right lot.`,
+      act: `Guiding ${id} straight north past crosswalk, then right onto overflow road.`,
+      explain: `Verified ${id} cleared campus bottleneck (${state.overflowRoutedCount} total redirected).`
+    });
+    addAudit(`OVERFLOW · ${id}`, `Car lot full (${note})`, 'Sent Ahead → Right', 'ok');
+
+    spawnVehicle({
+      id, type: 'CAR', color, path: getOverflowPath(fromPt), mode: 'OVERFLOW',
+      onArrive: () => updateStats()
+    });
+    updateSignJunction();
+    updateStats();
+  }
+
+  function approveOverflow() {
+    if (!state.pendingApproval) return;
+    const { id, color } = state.pendingApproval;
+    state.pendingApproval = null;
+    state.overflowApproved = true;
+    const idx = state.vehicles.findIndex(v => v.id === id && v.mode === 'HOLD');
+    let pt = { x: 608, y: 556 };
+    if (idx >= 0) { pt = { x: state.vehicles[idx].x, y: state.vehicles[idx].y }; state.vehicles.splice(idx, 1); }
+    renderApproval();
+    routeToOverflow(id, color, pt, 'Attendant Approved');
+    toast(`Approved — ${id} taking right turn ahead to Overflow.`, 'ok');
+  }
+
+  function rejectOverflow() {
+    if (!state.pendingApproval) return;
+    const { id, color } = state.pendingApproval;
+    state.pendingApproval = null;
+    const idx = state.vehicles.findIndex(v => v.id === id && v.mode === 'HOLD');
+    let pt = { x: 608, y: 568 };
+    if (idx >= 0) { pt = { x: state.vehicles[idx].x, y: state.vehicles[idx].y }; state.vehicles.splice(idx, 1); }
+    spawnVehicle({ id, type: 'CAR', color, path: [pt, ...EXIT_FROM_JUNCTION.map(p => ({ ...p }))], mode: 'EXIT', onArrive: () => {} });
+    setStory(`Overflow rejected — ${id} exiting cleanly via right gate lane.`, 'alert');
+    setAiLoop({
+      sense: `Attendant rejected overflow request for ${id}.`,
+      think: `Policy enforces human override — overflow corridor remains closed.`,
+      act: `Diverted ${id} out through right Exit lane.`,
+      explain: `Zero unauthorized vehicles sent to overflow; decision logged.`
+    });
+    addAudit(`OV_DENY · ${id}`, 'Attendant rejected overflow', 'Exited Gate', 'rej');
+    renderApproval();
+    updateSignJunction();
+    updateStats();
+  }
+
+  function addBike(customId = null) {
+    const id = customId || `BK-${state.bikeSeq++}`;
+    const color = BIKE_COLORS[state.bikeSeq % BIKE_COLORS.length];
+
+    if (state.parkedDb.has(id) || state.vehicles.some(v => v.id === id)) {
+      flashCam('CAM-1');
+      setStory(`Duplicate blocked — ${id} is already parked in the DB.`, 'alert');
+      addAudit(`DUP · ${id}`, 'Already active in DB', 'Blocked', 'rej');
+      toast(`Duplicate scan blocked for ${id}`, 'err');
+      return;
+    }
+
+    flashCam('CAM-1');
+    const b1 = zoneStats('ZONE_BIKE_1');
+    const openB1 = b1.list.find(s => s.status === 'AVAILABLE');
+
+    if (openB1) {
+      openB1.status = 'INBOUND';
+      openB1.vehicleId = id;
+      openB1.vehicleColor = color;
+      setStory(`${id} entering → routed left to Main Bike Lot (${openB1.id}).`);
+      setAiLoop({
+        sense: `CAM-1 detected two-wheeler ${id}. Main Bike Lot has ${b1.avail} open spot(s).`,
+        think: `Hard rule: fill Main Bike Lot before activating Bike Zone 2.`,
+        act: `Directed ${id} left onto red-paved lot → bay ${openB1.id}.`,
+        explain: `CAM-3 will verify arrival and commit ${openB1.id} to persistent DB.`
+      });
+      spawnVehicle({
+        id, type: 'BIKE', color, path: getEntryPath(openB1), mode: 'ARRIVE',
+        onArrive: () => {
+          commitPark(id, openB1, color);
+          addAudit(`PARK · ${id}`, `Main bike lot open → ${openB1.id}`, 'Stored in DB', 'ok');
+        }
+      });
+      updateSignJunction();
+      renderSlots();
+      updateStats();
+      return;
+    }
+
+    updateSignJunction();
+    const openB2 = state.slots.find(s => s.zone === 'ZONE_BIKE_2' && s.status === 'AVAILABLE');
+    if (!openB2) { toast('Both bike zones are completely full!', 'err'); return; }
+
+    openB2.status = 'INBOUND';
+    openB2.vehicleId = id;
+    openB2.vehicleColor = color;
+    setStory(`Main Bike Lot FULL (64/64) — SIGN_JUNCTION redirected ${id} right around perimeter → ${openB2.id}!`, 'sky');
+    setAiLoop({
+      sense: `CAM-3 reports Main Bike Lot at 64/64 FULL as ${id} arrives.`,
+      think: `Policy triggered: open Bike Zone 2 along east building perimeter (Car lot excluded).`,
+      act: `Switched SIGN_JUNCTION & guided ${id} right around perimeter to ${openB2.id}.`,
+      explain: `Automatic redirect keeps main gate clear; reverts the moment any Main Bike spot frees up.`
+    });
+
+    spawnVehicle({
+      id, type: 'BIKE', color, path: getEntryPath(openB2), mode: 'ARRIVE',
+      onArrive: () => {
+        commitPark(id, openB2, color);
+        addAudit(`REDIR · ${id}`, 'Main bike lot 64/64 full', `Zone 2 (${openB2.id})`, 'ok');
+      }
+    });
+    renderSlots();
+    updateStats();
+  }
+
+  function removeSlotVehicle(slot) {
+    if (!slot || slot.status !== 'OCCUPIED' || !slot.vehicleId) return;
+    const id = slot.vehicleId;
+    const type = slot.vehicleType;
+    const color = slot.vehicleColor;
+
+    state.parkedDb.delete(id);
+    slot.status = 'AVAILABLE';
+    slot.vehicleId = null;
+    slot.vehicleColor = null;
+    slot.parkedAt = null;
+    saveDb();
+
+    const wasBike2 = state.bike2Active;
+    updateSignJunction();
+    const reverted = wasBike2 && !state.bike2Active;
+
+    setStory(reverted
+      ? `${id} exited ${slot.id} — Main Bike Lot open again, SIGN_JUNCTION reverted!`
+      : `${id} removed from DB — bay ${slot.id} is now free.`, '');
+    setAiLoop({
+      sense: `${id} departed bay ${slot.id}.`,
+      think: `Deleted record from live DB and recalculated available bays dynamically.`,
+      act: `Freed ${slot.id} immediately and routed ${id} out right Exit gate.`,
+      explain: reverted ? `Main Bike Lot dropped below 64/64, so SIGN_JUNCTION automatically switched back to normal.` : `Bay ${slot.id} is ready for the next incoming vehicle.`
+    });
+    addAudit(`EXIT · ${id}`, `Removed from ${slot.id}`, reverted ? 'Freed + Sign Reverted' : `Freed ${slot.id}`, 'ok');
+
+    spawnVehicle({
+      id, type, color, path: getExitPath(slot), mode: 'EXIT',
+      onArrive: () => { flashCam('CAM-1'); updateStats(); }
+    });
+
+    renderSlots();
+    renderDb();
+    updateStats();
+  }
+
+  function removeOne(type, zone = null) {
+    let list = state.slots.filter(s => s.status === 'OCCUPIED' && s.vehicleType === type);
+    if (zone) {
+      const z = list.filter(s => s.zone === zone);
+      if (z.length) list = z;
+    }
+    if (!list.length) { toast(`No parked ${type.toLowerCase()}s to remove.`, 'warn'); return; }
+    removeSlotVehicle(list[list.length - 1]);
+  }
+
+  function clearDemos() {
+    state.demoTimers.forEach(t => clearTimeout(t));
+    state.demoTimers = [];
+  }
+
+  function seedLots(carCount, bikeCount, allCars = false) {
+    state.slots = buildSlots();
+    state.vehicles = [];
+    state.parkedDb.clear();
+    state.pendingApproval = null;
+    state.overflowApproved = false;
+    state.overflowRoutedCount = 0;
+    state.bike2Active = false;
+    state.auditLog = [];
+
+    const cars = state.slots.filter(s => s.zone === 'ZONE_CAR' && (allCars || !s.accessible));
+    for (let i = 0; i < Math.min(carCount, cars.length); i++) {
+      const s = cars[i], id = `CAR-${200 + i}`, col = CAR_COLORS[i % CAR_COLORS.length];
+      s.status = 'OCCUPIED'; s.vehicleId = id; s.vehicleColor = col; s.parkedAt = '13:45:00';
+      state.parkedDb.set(id, { slotId: s.id, zone: s.zone, vehicleType: 'CAR', color: col, parkedAt: s.parkedAt });
+    }
+    const bikes = state.slots.filter(s => s.zone === 'ZONE_BIKE_1');
+    for (let i = 0; i < Math.min(bikeCount, bikes.length); i++) {
+      const s = bikes[i], id = `BK-${500 + i}`, col = BIKE_COLORS[i % BIKE_COLORS.length];
+      s.status = 'OCCUPIED'; s.vehicleId = id; s.vehicleColor = col; s.parkedAt = '13:48:00';
+      state.parkedDb.set(id, { slotId: s.id, zone: s.zone, vehicleType: 'BIKE', color: col, parkedAt: s.parkedAt });
+    }
+    saveDb();
+    updateSignJunction();
+    renderApproval();
+    renderSlots();
+    renderDb();
+    renderAudit();
+    updateStats();
+  }
+
+  function demo1CarOverflow() {
+    clearDemos();
+    seedLots(30, 44, true);
+    setStory('Schedule Shift: C-101 moved to Lab 2 + visiting group arriving (Car Lot 30/30 FULL).', 'warn');
+    setAiLoop({
+      sense: 'Schedule note: "Class moved C-101 → Lab 2; visiting group arriving." Car Lot 30/30 FULL; Bike Lot 44/64.',
+      think: 'Anticipating visiting car overflow while two-wheelers still fit normally on the left.',
+      act: 'Incoming visiting car CAR-VIS-01 arriving at gate now...',
+      explain: 'Approve the amber card below to route CAR-VIS-01 straight ahead and right.'
+    });
+    state.demoTimers.push(setTimeout(() => addCar('CAR-VIS-01'), 700));
+    state.demoTimers.push(setTimeout(() => addBike('BK-STU-12'), 2300));
+  }
+
+  function demo2BikeRedirect() {
+    clearDemos();
+    seedLots(16, 63, false);
+    setStory('Bike Surge: 63/64 full (1 spot left) — watch SIGN_JUNCTION flip to Bike Zone 2!', 'sky');
+    state.demoTimers.push(setTimeout(() => addBike('BK-64-LAST'), 450));
+    state.demoTimers.push(setTimeout(() => addBike('BK-Z2-01'), 2400));
+    state.demoTimers.push(setTimeout(() => addBike('BK-Z2-02'), 4200));
+  }
+
+  function demo3DuplicateScan() {
+    const ids = Array.from(state.parkedDb.keys());
+    if (ids.length) {
+      const id = ids[ids.length - 1];
+      if (state.parkedDb.get(id).vehicleType === 'CAR') addCar(id);
+      else addBike(id);
+    } else {
+      addCar('CAR-101');
+      state.demoTimers.push(setTimeout(() => addCar('CAR-101'), 900));
+    }
+  }
+
+  function resetAll(silent = false) {
+    clearDemos();
+    state.simSeconds = 14 * 3600;
+    state.carSeq = 101;
+    state.bikeSeq = 401;
+    seedLots(12, 24, false);
+    setStory('Baseline campus state ready — pick Demo 1, 2, or 3 below.');
+    setAiLoop({
+      sense: '3 vision cameras online (Main Gate, Car Lot, Bike Lot).',
+      think: 'Live DB synced: 12/30 cars and 24/64 bikes parked.',
+      act: 'SIGN_JUNCTION showing normal open routing for both lots.',
+      explain: 'Click any parked car/bike on the map to remove it and watch its bay free up.'
+    });
+    if (!silent) toast('Reset to clean baseline.', 'info');
+  }
+
+  function el(tag, attrs = {}) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
+  }
+
+  function vehicleSvg(type, color, scale = 1) {
+    const g = el('g', scale !== 1 ? { transform: `scale(${scale})` } : {});
+    if (type === 'CAR') {
+      g.appendChild(el('rect', { x: -16, y: -8.5, width: 32, height: 17, rx: 4.5, fill: '#05080e', opacity: '0.45', transform: 'translate(1.2,1.6)' }));
+      g.appendChild(el('rect', { x: -16, y: -8.5, width: 32, height: 17, rx: 4.5, fill: color, stroke: '#0b0f17', 'stroke-width': '1.3' }));
+      g.appendChild(el('rect', { x: 2, y: -6, width: 6.5, height: 12, rx: 1.8, fill: '#0f172a', opacity: '0.84' }));
+      g.appendChild(el('rect', { x: -11, y: -5.5, width: 5, height: 11, rx: 1.4, fill: '#0f172a', opacity: '0.72' }));
+      g.appendChild(el('circle', { cx: 14.5, cy: -5, r: 1.7, fill: '#fef08a' }));
+      g.appendChild(el('circle', { cx: 14.5, cy: 5, r: 1.7, fill: '#fef08a' }));
+    } else {
+      g.appendChild(el('rect', { x: -8.5, y: -3.4, width: 17, height: 6.8, rx: 3.2, fill: color, stroke: '#0b0f17', 'stroke-width': '1.1' }));
+      g.appendChild(el('line', { x1: 3.5, y1: -5.2, x2: 3.5, y2: 5.2, stroke: '#e2e8f0', 'stroke-width': '1.6', 'stroke-linecap': 'round' }));
+      g.appendChild(el('circle', { cx: -1, cy: 0, r: 3, fill: '#f8fafc', stroke: '#0b0f17', 'stroke-width': '0.9' }));
+      g.appendChild(el('circle', { cx: 8, cy: 0, r: 1.5, fill: '#fef08a' }));
+    }
+    return g;
+  }
+
+  function renderCameras() {
+    const g = document.getElementById('camerasLayer');
+    g.innerHTML = '';
+    const now = performance.now();
+    CAMERAS.forEach(cam => {
+      const lit = (state.camFlash[cam.id] || 0) > now;
+      const grp = el('g', { style: 'cursor:pointer;' });
+      const r1 = ((cam.fovAngle - cam.fovSpan / 2) * Math.PI) / 180;
+      const r2 = ((cam.fovAngle + cam.fovSpan / 2) * Math.PI) / 180;
+      const x1 = cam.x + Math.cos(r1) * cam.fovLen, y1 = cam.y + Math.sin(r1) * cam.fovLen;
+      const x2 = cam.x + Math.cos(r2) * cam.fovLen, y2 = cam.y + Math.sin(r2) * cam.fovLen;
+
+      grp.appendChild(el('path', {
+        d: `M ${cam.x} ${cam.y} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${cam.fovLen} ${cam.fovLen} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`,
+        fill: lit ? 'rgba(245, 158, 11, 0.28)' : 'rgba(56, 189, 248, 0.16)',
+        stroke: lit ? 'rgba(245, 158, 11, 0.65)' : 'rgba(56, 189, 248, 0.35)',
+        'stroke-width': '1', 'stroke-dasharray': '3 3'
+      }));
+      grp.appendChild(el('circle', { cx: cam.x, cy: cam.y, r: 11, fill: '#0b1220', stroke: lit ? '#fbbf24' : '#38bdf8', 'stroke-width': lit ? '2.4' : '1.8' }));
+      grp.appendChild(el('rect', { x: cam.x - 5.5, y: cam.y - 3.5, width: 8, height: 7, rx: 1.5, fill: lit ? '#fbbf24' : '#7dd3fc' }));
+      grp.appendChild(el('polygon', { points: `${cam.x + 2.5},${cam.y - 2} ${cam.x + 6.5},${cam.y - 4} ${cam.x + 6.5},${cam.y + 4} ${cam.x + 2.5},${cam.y + 2}`, fill: lit ? '#fbbf24' : '#7dd3fc' }));
+
+      const tx = cam.id === 'CAM-1' ? cam.x + 15 : cam.x - 23;
+      const ty = cam.id === 'CAM-1' ? cam.y + 3 : cam.y - 16;
+      grp.appendChild(el('rect', { x: tx, y: ty - 9, width: 46, height: 14, rx: 4, fill: 'rgba(8,11,17,0.9)', stroke: lit ? '#fbbf24' : '#38bdf8', 'stroke-width': '1' }));
+      const t = el('text', { x: tx + 23, y: ty + 1, 'text-anchor': 'middle', fill: lit ? '#fde68a' : '#bae6fd', 'font-family': 'ui-monospace, monospace', 'font-size': '8.2', 'font-weight': '800' });
+      t.textContent = cam.id;
+      grp.appendChild(t);
+
+      grp.addEventListener('mouseenter', e => showTip(e, `${cam.id} · ${cam.name}`, 'ONLINE', cam.role, ''));
+      grp.addEventListener('mousemove', moveTip);
+      grp.addEventListener('mouseleave', hideTip);
+      g.appendChild(grp);
+    });
+  }
+
+  function renderRoutes() {
+    const g = document.getElementById('routeLayer');
+    g.innerHTML = '';
+    if (state.bike2Active) {
+      const d = 'M 608 556 L 690 534 L 752 526 L 778 548 L 894 591 L 1062 642 L 1120 654 L 1154 648 L 1172 622 L 1202 512';
+      g.appendChild(el('path', { d, fill: 'none', stroke: '#38bdf8', 'stroke-width': '6', 'stroke-opacity': '0.24', 'stroke-linecap': 'round' }));
+      g.appendChild(el('path', { d, fill: 'none', stroke: '#38bdf8', 'stroke-width': '2.6', 'stroke-dasharray': '10 8', 'stroke-linecap': 'round', class: 'route-flow', filter: 'url(#glowSky)' }));
+    }
+    if (state.overflowApproved || state.pendingApproval) {
+      const d = 'M 608 556 L 614 360 L 614 52 Q 614 48 715 48 Q 830 44 965 10';
+      const col = state.overflowApproved ? '#f59e0b' : '#fbbf24';
+      g.appendChild(el('path', { d, fill: 'none', stroke: col, 'stroke-width': '6', 'stroke-opacity': '0.22', 'stroke-linecap': 'round' }));
+      g.appendChild(el('path', { d, fill: 'none', stroke: col, 'stroke-width': '2.8', 'stroke-dasharray': '10 8', 'stroke-linecap': 'round', class: 'route-flow', filter: 'url(#glowAmber)' }));
+      g.appendChild(el('rect', { x: 785, y: 12, width: 152, height: 22, rx: 6, fill: 'rgba(8,11,17,0.92)', stroke: col, 'stroke-width': '1.4' }));
+      const t = el('text', { x: 861, y: 26.5, 'text-anchor': 'middle', fill: '#fde68a', 'font-family': 'ui-monospace, monospace', 'font-size': '9.5', 'font-weight': '800' });
+      t.textContent = state.overflowApproved ? 'OVERFLOW ↗' : 'OVERFLOW (WAIT) ↗';
+      g.appendChild(t);
+    }
+  }
+
+  function renderSlots() {
+    const g = document.getElementById('slotsLayer');
+    g.innerHTML = '';
+    state.slots.forEach(s => {
+      const grp = el('g', {
+        transform: s.angle ? `rotate(${s.angle} ${s.cx} ${s.cy})` : '',
+        style: s.status === 'OCCUPIED' ? 'cursor:pointer;' : 'cursor:default;'
+      });
+      let fill = 'rgba(16,185,129,0.24)', stroke = '#10b981', dash = 'none';
+      if (s.status === 'OCCUPIED') { fill = 'rgba(239,68,68,0.26)'; stroke = '#f87171'; }
+      else if (s.status === 'INBOUND') { fill = 'rgba(245,158,11,0.25)'; stroke = '#fbbf24'; dash = '3 2'; }
+      else if (s.status === 'LOCKED') { fill = 'rgba(100,116,139,0.14)'; stroke = 'rgba(148,163,184,0.45)'; dash = '3 2'; }
+      else if (s.accessible) { fill = 'rgba(56,189,248,0.28)'; stroke = '#38bdf8'; }
+
+      grp.appendChild(el('rect', { x: s.x, y: s.y, width: s.w, height: s.h, rx: s.vehicleType === 'CAR' ? 3 : 2.5, fill, stroke, 'stroke-width': '1.2', 'stroke-dasharray': dash }));
+
+      if (s.status === 'OCCUPIED') {
+        const pg = el('g', { transform: `translate(${s.cx},${s.cy}) rotate(${s.vehicleType === 'CAR' ? s.parkAngle : 0})` });
+        pg.appendChild(vehicleSvg(s.vehicleType, s.vehicleColor || '#38bdf8', s.vehicleType === 'CAR' ? 0.96 : 0.84));
+        grp.appendChild(pg);
+        if (s.vehicleType === 'CAR' && s.vehicleId) {
+          grp.appendChild(el('rect', { x: s.cx - 14, y: s.cy - 5, width: 28, height: 10, rx: 2.5, fill: 'rgba(8,11,17,0.82)' }));
+          const lbl = el('text', { x: s.cx, y: s.cy + 2.8, 'text-anchor': 'middle', fill: '#f8fafc', 'font-family': 'ui-monospace, monospace', 'font-size': '7', 'font-weight': '800' });
+          lbl.textContent = s.vehicleId.replace('CAR-', '');
+          grp.appendChild(lbl);
+        }
+      } else if (s.accessible && s.status === 'AVAILABLE') {
+        const acc = el('text', { x: s.cx, y: s.cy + 4, 'text-anchor': 'middle', fill: '#e0f2fe', 'font-size': '11', 'font-weight': '800' });
+        acc.textContent = '♿';
+        grp.appendChild(acc);
+      }
+
+      grp.addEventListener('mouseenter', e => {
+        const info = s.vehicleId ? `${s.vehicleId} · Parked ${s.parkedAt}` : (s.accessible ? 'Accessible / Reserved bay' : 'Ready for assignment');
+        const hint = s.status === 'OCCUPIED' ? 'Click to remove vehicle & free bay' : '';
+        showTip(e, s.id, s.status, info, hint);
+      });
+      grp.addEventListener('mousemove', moveTip);
+      grp.addEventListener('mouseleave', hideTip);
+      grp.addEventListener('click', () => { if (s.status === 'OCCUPIED') { hideTip(); removeSlotVehicle(s); } });
+      g.appendChild(grp);
+    });
+  }
+
+  function renderVehicles() {
+    const g = document.getElementById('vehiclesLayer');
+    g.innerHTML = '';
+    state.vehicles.forEach(v => {
+      const grp = el('g', { transform: `translate(${v.x.toFixed(1)},${v.y.toFixed(1)})` });
+      const body = el('g', { transform: `rotate(${v.angle.toFixed(1)})` });
+      body.appendChild(vehicleSvg(v.type, v.color, 1));
+      grp.appendChild(body);
+      grp.appendChild(el('rect', { x: -24, y: -22, width: 48, height: 12, rx: 3, fill: 'rgba(8,11,17,0.92)', stroke: v.mode === 'HOLD' ? '#f59e0b' : v.color, 'stroke-width': '0.9' }));
+      const txt = el('text', { x: 0, y: -13.5, 'text-anchor': 'middle', fill: '#f8fafc', 'font-family': 'ui-monospace, monospace', 'font-size': '7.4', 'font-weight': '800' });
+      txt.textContent = v.id;
+      grp.appendChild(txt);
+      g.appendChild(grp);
+    });
+  }
+
+  function updateStats() {
+    const car = zoneStats('ZONE_CAR');
+    const b1 = zoneStats('ZONE_BIKE_1');
+    const b2 = zoneStats('ZONE_BIKE_2');
+
+    document.getElementById('numCar').textContent = car.occupied;
+    document.getElementById('barCar').style.transform = `scaleX(${car.occupied / car.total})`;
+    document.getElementById('barCar').style.backgroundColor = car.avail === 0 ? 'var(--rose)' : 'var(--emerald)';
+    document.getElementById('stCar').textContent = car.avail === 0 ? 'Full' : `${car.avail} free`;
+    document.getElementById('tileCar').className = 'stat-tile' + (car.avail === 0 ? ' full' : '');
+
+    document.getElementById('numBike1').textContent = b1.occupied;
+    document.getElementById('barBike1').style.transform = `scaleX(${b1.occupied / b1.total})`;
+    document.getElementById('barBike1').style.backgroundColor = b1.avail === 0 ? 'var(--rose)' : 'var(--emerald)';
+    document.getElementById('stBike1').textContent = b1.avail === 0 ? 'Full' : `${b1.avail} free`;
+    document.getElementById('tileBike1').className = 'stat-tile' + (b1.avail === 0 ? ' full' : '');
+
+    document.getElementById('numBike2').textContent = b2.occupied;
+    document.getElementById('barBike2').style.transform = `scaleX(${b2.occupied / b2.total})`;
+    document.getElementById('barBike2').style.backgroundColor = 'var(--sky)';
+    document.getElementById('stBike2').textContent = state.bike2Active ? 'Active' : 'Standby';
+    document.getElementById('tileBike2').className = 'stat-tile' + (state.bike2Active ? ' active' : '');
+
+    document.getElementById('numOv').textContent = state.overflowRoutedCount;
+    document.getElementById('barOv').style.transform = `scaleX(${Math.min(1, state.overflowRoutedCount / 5)})`;
+    document.getElementById('stOv').textContent = state.pendingApproval ? 'Pending' : (state.overflowApproved ? 'Active ↗' : 'Ready');
+    document.getElementById('tileOverflow').className = 'stat-tile' + (state.pendingApproval || state.overflowApproved ? ' warn' : '');
+
+    document.getElementById('dbCount').textContent = state.parkedDb.size;
+    document.getElementById('simClock').textContent = `${fmtTime()} IST`;
+  }
+
+  function renderApproval() {
+    const c = document.getElementById('approvalCard');
+    if (!state.pendingApproval) { c.classList.remove('visible'); return; }
+    document.getElementById('apDesc').innerHTML = `<strong>Attendant Approval Needed:</strong> Car lot is full (30/30). Route <strong>${state.pendingApproval.id}</strong> straight ahead and right to Overflow?`;
+    c.classList.add('visible');
+  }
+
+  function renderDb() {
+    const tbody = document.getElementById('dbBody');
+    const rows = Array.from(state.parkedDb.entries()).reverse();
+    document.getElementById('dbSummary').textContent = `${rows.length} parked in local DB`;
+    document.getElementById('dbCount').textContent = rows.length;
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-3);padding:14px 6px;text-align:center;">Lots empty — click + Car or + Bike.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(([id, r]) => `
+      <tr>
+        <td style="font-family:var(--mono);font-weight:700;">${r.slotId}</td>
+        <td><span style="display:inline-block;width:7px;height:7px;border-radius:99px;background:${r.color};margin-right:5px;"></span><span style="font-family:var(--mono);">${id}</span></td>
+        <td style="font-family:var(--mono);color:var(--text-3);">${r.parkedAt}</td>
+        <td style="text-align:right;"><button type="button" class="btn-xs btn-reject" data-rm="${r.slotId}">Exit</button></td>
+      </tr>
+    `).join('');
+    tbody.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => {
+      const s = state.slots.find(x => x.id === b.dataset.rm);
+      if (s) removeSlotVehicle(s);
+    }));
+  }
+
+  function renderAudit() {
+    const tbody = document.getElementById('auditBody');
+    if (!state.auditLog.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-3);padding:14px 6px;text-align:center;">Events will be recorded here automatically.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = state.auditLog.map(r => `
+      <tr>
+        <td style="font-family:var(--mono);color:var(--text-3);">${r.time}</td>
+        <td style="font-weight:600;">${r.event}</td>
+        <td style="color:var(--text-2);">${r.why}</td>
+        <td class="tag-${r.cls}">${r.result}</td>
+      </tr>
+    `).join('');
+  }
+
+  function showTip(e, head, status, row, hint) {
+    const tt = document.getElementById('tooltip');
+    tt.innerHTML = `<div class="tt-head"><span>${head}</span><span style="color:${status === 'OCCUPIED' ? '#fca5a5' : '#6ee7b7'}">${status}</span></div><div class="tt-row">${row}</div>${hint ? `<div class="tt-hint">${hint}</div>` : ''}`;
+    tt.style.display = 'block';
+    moveTip(e);
+  }
+  function moveTip(e) {
+    const tt = document.getElementById('tooltip');
+    tt.style.left = Math.min(window.innerWidth - 210, e.clientX + 14) + 'px';
+    tt.style.top = Math.min(window.innerHeight - 110, e.clientY + 14) + 'px';
+  }
+  function hideTip() { document.getElementById('tooltip').style.display = 'none'; }
+
+  let lastTs = performance.now(), secAcc = 0;
+  function tick(now) {
+    const rawDt = Math.min(0.05, (now - lastTs) / 1000);
+    lastTs = now;
+
+    let camDirty = false;
+    for (const [cid, exp] of Object.entries(state.camFlash)) {
+      if (exp <= now) { delete state.camFlash[cid]; camDirty = true; }
+    }
+    if (camDirty) renderCameras();
+
+    if (!state.paused) {
+      const dt = rawDt * state.speed;
+      secAcc += dt;
+      if (secAcc >= 1) {
+        const w = Math.floor(secAcc); secAcc -= w; state.simSeconds += w;
+        document.getElementById('simClock').textContent = `${fmtTime()} IST`;
+      }
+      const done = [];
+      state.vehicles.forEach((v, idx) => {
+        if (v.pauseLeft > 0) { v.pauseLeft -= dt * 1000; return; }
+        if (v.segIdx >= v.path.length - 1) { if (v.mode !== 'HOLD') done.push(idx); return; }
+        const a = v.path[v.segIdx], b = v.path[v.segIdx + 1];
+        const dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy) || 1;
+        v.segT += ((v.type === 'CAR' ? 215 : 245) * dt) / dist;
+        v.angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+        if (v.segT >= 1) {
+          v.x = b.x; v.y = b.y; v.segIdx += 1; v.segT = 0;
+          if (b.camId) flashCam(b.camId);
+          if (b.pauseMs) v.pauseLeft = b.pauseMs;
+          if (v.segIdx >= v.path.length - 1 && v.mode !== 'HOLD') done.push(idx);
+        } else {
+          v.x = a.x + dx * v.segT; v.y = a.y + dy * v.segT;
+        }
+      });
+      for (let i = done.length - 1; i >= 0; i--) {
+        const v = state.vehicles[done[i]];
+        state.vehicles.splice(done[i], 1);
+        if (v.onArrive) v.onArrive();
+      }
+      renderVehicles();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  document.getElementById('btnDemo1').addEventListener('click', demo1CarOverflow);
+  document.getElementById('btnDemo2').addEventListener('click', demo2BikeRedirect);
+  document.getElementById('btnDemo3').addEventListener('click', demo3DuplicateScan);
+  document.getElementById('btnAddCar').addEventListener('click', () => addCar());
+  document.getElementById('btnRemCar').addEventListener('click', () => removeOne('CAR'));
+  document.getElementById('btnAddBike').addEventListener('click', () => addBike());
+  document.getElementById('btnRemBike').addEventListener('click', () => removeOne('BIKE'));
+  document.getElementById('btnApproveOv').addEventListener('click', approveOverflow);
+  document.getElementById('btnRejectOv').addEventListener('click', rejectOverflow);
+  document.getElementById('btnReset').addEventListener('click', () => resetAll(false));
+  document.getElementById('btnEmptyDb').addEventListener('click', () => { clearDemos(); seedLots(0, 0, false); setStory('All lots cleared — click + Car or + Bike to populate.'); });
+
+  document.getElementById('btnSpeed').addEventListener('click', e => {
+    state.speed = state.speed === 1.5 ? 2.5 : (state.speed === 2.5 ? 1 : 1.5);
+    e.target.textContent = `${state.speed}× Speed`;
+  });
+  document.getElementById('btnPause').addEventListener('click', e => {
+    state.paused = !state.paused;
+    e.target.textContent = state.paused ? 'Resume' : 'Pause';
+  });
+
+  document.querySelectorAll('.seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.pane).classList.add('active');
+    });
+  });
+
+  document.getElementById('signJunctionGroup').addEventListener('click', () => {
+    document.querySelector('.seg-btn[data-pane="paneAudit"]').click();
+  });
+
+  if (loadDb()) {
+    updateSignJunction();
+    renderSlots();
+    renderCameras();
+    renderDb();
+    renderAudit();
+    updateStats();
+  } else {
+    resetAll(true);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

@@ -57,17 +57,21 @@ class DebouncedOccupancy:
             return {"Lights": "On", "Fans": "On", "Projector": "On"}
         return {"Lights": "Off", "Fans": "Off", "Projector": "Off"}
 
-    def status_message(self, active: bool, has_frame: bool) -> str:
+    def status_message(self, active: bool, has_frame: bool, manual_override: Optional[str] = None) -> str:
+        if manual_override == "on":
+            return "Manual Override — Lights On, Fans On, Projector On"
+        if manual_override == "off":
+            return "Manual Override — Lights Off, Fans Off, Projector Off"
         if not active:
-            return "CCTV inactive — click Initialize CCTV Cam to start Phone 1 DroidCam."
+            return "CCTV inactive — click Initialize CCTV Cam or use Manual Override."
         if not has_frame:
             return "Connecting to Phone 1 DroidCam stream…"
         if self.state == "OCCUPIED":
             rem = self.hold_remaining()
             if self.person_count == 0 and rem > 0:
-                return f"Person left frame — verifying empty ({rem:.1f}s hold) · no change yet"
-            return "Person detected — no change"
-        return "Class empty — Lights Off, Fan Off, Projector Off"
+                return f"Person left frame — verifying empty ({rem:.1f}s hold) · Appliances On"
+            return "Person detected — Lights On, Fans On, Projector On"
+        return "Class empty — Lights Off, Fans Off, Projector Off"
 
 
 def _iter_http_mjpeg(url: str, stop_event: threading.Event, timeout: float = 5.0) -> Iterator[bytes]:
@@ -99,7 +103,7 @@ def _iter_http_mjpeg(url: str, stop_event: threading.Event, timeout: float = 5.0
 class ClassroomCCTVEngine:
     """Manages Phone 1 DroidCam capture + YOLOv8n inference + live MJPEG output."""
 
-    def __init__(self, *, model_name: str = "yolov8n.pt", imgsz: int = 416, conf: float = 0.50):
+    def __init__(self, *, model_name: str = "yolov8n.pt", imgsz: int = 416, conf: float = 0.35):
         self.model_name = model_name
         self.imgsz = imgsz
         self.conf = conf
@@ -118,12 +122,25 @@ class ClassroomCCTVEngine:
         self._fps = 0.0
         self._infer_ms = 0.0
         self._occupancy = DebouncedOccupancy(hold_seconds=3.0)
+        self._manual_override: Optional[str] = None  # None (auto) | "on" | "off"
 
         self._raw_frame: Any = None
         self._raw_seq = 0
         self._jpeg_bytes: Optional[bytes] = None
         self._jpeg_seq = 0
         self._model: Any = None
+        self._events: list[dict[str, str]] = []
+        self._logged_initial_frame = False
+
+    def _record_event_locked(self, stage: str, title: str, detail: str) -> None:
+        self._events.insert(0, {
+            "time": time.strftime("%H:%M:%S"),
+            "stage": stage,
+            "title": title,
+            "detail": detail,
+        })
+        if len(self._events) > 50:
+            self._events.pop()
 
     def _encode_status_jpeg(self, cv2_mod: Any, np_mod: Any, title: str, detail: str) -> bytes:
         canvas = np_mod.zeros((420, 740, 3), dtype=np_mod.uint8)
@@ -169,8 +186,10 @@ class ClassroomCCTVEngine:
             self._fps = 0.0
             self._infer_ms = 0.0
             self._occupancy = DebouncedOccupancy(hold_seconds=max(0.5, min(30.0, float(hold_seconds))))
+            self._logged_initial_frame = False
             self._raw_frame = None
             self._raw_seq = 0
+            self._record_event_locked("CCTV", "CCTV initialized", f"Connecting to {cleaned}")
             self._jpeg_bytes = self._encode_status_jpeg(
                 cv2, np, f"Connecting to {cleaned}...", "Loading YOLOv8n person detector in RAM..."
             )
@@ -199,6 +218,8 @@ class ClassroomCCTVEngine:
             self._error = None
             self._fps = 0.0
             self._infer_ms = 0.0
+            if was_active:
+                self._record_event_locked("CCTV", "CCTV disabled", "Live camera stream stopped.")
             self._frame_cond.notify_all()
 
         if was_active:
@@ -208,6 +229,39 @@ class ClassroomCCTVEngine:
         self._capture_thread = None
         self._infer_thread = None
         return self.status()
+
+    def set_manual_override(self, mode: str) -> dict[str, Any]:
+        """Set manual override: 'on' (all On), 'off' (all Off), or 'auto' (follow CCTV)."""
+        if mode not in {"on", "off", "auto"}:
+            raise ValueError("mode must be 'on', 'off', or 'auto'")
+        with self._lock:
+            self._manual_override = None if mode == "auto" else mode
+            if mode == "on":
+                self._record_event_locked(
+                    "Override",
+                    "Manual override — All ON",
+                    "Lights On, Fans On, Projector On (manual control active).",
+                )
+            elif mode == "off":
+                self._record_event_locked(
+                    "Override",
+                    "Manual override — All OFF",
+                    "Lights Off, Fans Off, Projector Off (manual control active).",
+                )
+            else:
+                self._record_event_locked(
+                    "Auto",
+                    "Manual override released",
+                    "Returned appliance control to live CCTV person detection.",
+                )
+        return self.status()
+
+    def _effective_devices_locked(self) -> dict[str, str]:
+        if self._manual_override == "on":
+            return {"Lights": "On", "Fans": "On", "Projector": "On"}
+        if self._manual_override == "off":
+            return {"Lights": "Off", "Fans": "Off", "Projector": "Off"}
+        return self._occupancy.devices()
 
     def _publish_raw(self, frame: Any, backend: str) -> None:
         with self._lock:
@@ -329,13 +383,29 @@ class ClassroomCCTVEngine:
                 fps_t0 = time.perf_counter()
 
             with self._lock:
+                prev_state = self._occupancy.state
+                first_frame = not self._logged_initial_frame
                 self._occupancy.update(count, max_conf)
                 self._has_frame = True
+                self._logged_initial_frame = True
                 self._infer_ms = round(infer_ms, 1)
                 if fps_now is not None:
                     self._fps = round(fps_now, 1)
                 state_snap = self._occupancy.state
                 rem = self._occupancy.hold_remaining()
+                if first_frame or state_snap != prev_state:
+                    if state_snap == "OCCUPIED":
+                        self._record_event_locked(
+                            "Occupied",
+                            "Person detected — Lights On, Fans On, Projector On",
+                            f"{count} {'person' if count == 1 else 'people'} detected in C-101.",
+                        )
+                    else:
+                        self._record_event_locked(
+                            "Empty",
+                            "Class empty — Lights Off, Fans Off, Projector Off",
+                            f"No person detected for {self._occupancy.hold_seconds:.1f}s.",
+                        )
 
             # Draw YOLOv8 person bounding boxes + compact live overlay directly onto streamed frame
             annotated = results[0].plot()
@@ -376,13 +446,15 @@ class ClassroomCCTVEngine:
                 "source": self._source,
                 "backend": self._backend,
                 "state": self._occupancy.state,
+                "manual_override": self._manual_override,
                 "person_count": self._occupancy.person_count,
                 "confidence": self._occupancy.confidence,
                 "hold_seconds": self._occupancy.hold_seconds,
                 "hold_remaining": round(self._occupancy.hold_remaining(), 1),
                 "fps": self._fps,
                 "infer_ms": self._infer_ms,
-                "devices": self._occupancy.devices(),
-                "status_message": self._occupancy.status_message(self._active, self._has_frame),
+                "devices": self._effective_devices_locked(),
+                "status_message": self._occupancy.status_message(self._active, self._has_frame, self._manual_override),
                 "error": self._error,
+                "events": list(self._events),
             }
