@@ -22,6 +22,7 @@
 - [ ] Assign owners and preserve the verified Alpha build before combining changes.
 - [x] Replace the Alpha interface with a Beta landing page and two dashboards containing eight sections.
 - [x] Use the supplied BMSITM parking layout in Fleet and verify the offline cross-dashboard workflow.
+- [x] Refine the landing page around the shared incident, license and optimize both photographs, and verify navigation at six viewport sizes.
 - [ ] Implement and prove variable note intake, typed evidence selection and the shared offline fallback.
 - [ ] Rehearse the independent parking and facilities approval and recovery journey from reset.
 - [ ] Run the paired 12-case evaluation and log correctness, operator input, safety and timing.

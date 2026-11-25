@@ -55,7 +55,12 @@ class ScenarioTest(TestCase):
                 for marker in markers:
                     self.assertIn(marker, response.text)
 
-        for name in ("campus-parking-map.webp", "resource-library.webp", "campusflow-icon.png"):
+        image_assets = (
+            "campus-parking-map.webp", "resource-library.webp", "campusflow-icon.png",
+            "landing-mobility-768.webp", "landing-mobility-1400.webp",
+            "landing-facilities-768.webp", "landing-facilities-1400.webp",
+        )
+        for name in image_assets:
             with self.subTest(asset=name):
                 response = self.client.get(f"/static/{name}")
                 self.assertEqual(response.status_code, 200)

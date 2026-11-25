@@ -5,53 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#f7f7f2">
-  <meta name="description" content="CampusFlow connects parking and campus resources through two operations dashboards.">
+  <meta name="description" content="CampusFlow checks parking and teaching spaces when schedules change, then verifies the actions staff approve.">
   <title>CampusFlow · Campus operations</title>
   <link rel="icon" href="/static/campusflow-icon.png" type="image/png">
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/landing.css">
 </head>
 <body class="landing-page">
-  <a class="skip-link" href="#main">Skip to workspaces</a>
+  <a class="skip-link" href="#main">Skip to main content</a>
   <header class="masthead">
     <div class="shell masthead-inner">
-      <a class="identity" href="/" aria-label="CampusFlow home">
+      <a class="identity" href="/" aria-label="CampusFlow home" aria-current="page">
         <img class="brand-mark" src="/static/campusflow-icon.png" width="34" height="34" alt="">
         <span class="brand">CampusFlow</span>
       </a>
+      <nav class="workspaces-nav" aria-label="Workspaces">
+        <a href="/fleet">Mobility</a>
+        <a href="/resources">Facilities</a>
+      </nav>
       <span class="environment">Simulation mode</span>
     </div>
   </header>
-  <main id="main" class="shell landing">
+
+  <main id="main" class="shell landing" tabindex="-1">
     <section class="landing-hero" aria-labelledby="home-title">
-      <div>
-        <p class="eyebrow"><span class="college-crest" aria-hidden="true"><img src="/static/bmsitm-lockup.png" width="2060" height="468" alt=""></span>BMS Institute of Technology &amp; Management</p>
-        <h1 id="home-title">Campus operations,<br><span>in sync.</span></h1>
+      <div class="hero-main">
+        <h1 id="home-title">Keep campus <span>operations in sync.</span></h1>
+        <p>CampusFlow checks parking and room availability when schedules change, then verifies the actions staff approve.</p>
+        <a class="hero-action" href="#workspaces">Explore dashboards</a>
       </div>
-      <p class="hero-copy">Manage parking, teaching spaces, and shared resources in two connected dashboards.</p>
+      <figure class="incident-example">
+        <figcaption>
+          <span class="eyebrow">Example incident</span>
+          <span class="example-title">Lab induction moves to Lab 2</span>
+        </figcaption>
+        <dl class="example-outcomes">
+          <div>
+            <dt>Gate A</dt>
+            <dd>Overflow verified</dd>
+          </div>
+          <div>
+            <dt>Classroom C-101</dt>
+            <dd>Device standby verified</dd>
+          </div>
+        </dl>
+        <p>Both outcomes share one decision audit.</p>
+      </figure>
     </section>
-    <section class="workspace-picker" aria-label="Operations dashboards">
-      <a class="workspace-card fleet-card" href="/fleet">
-        <div class="entry-media">
-          <img src="/static/campus-parking-map.webp" width="1264" height="848" fetchpriority="high" alt="">
-          <span class="entry-tag">Mobility</span>
-        </div>
-        <div class="entry-copy">
-          <div><h2>Vehicle Fleet Management</h2><p>Parking capacity, gate activity, and overflow approvals.</p></div>
-          <span class="entry-open"><span>Open dashboard</span><span class="entry-icon" aria-hidden="true"></span></span>
-        </div>
-      </a>
-      <a class="workspace-card resource-card" href="/resources">
-        <div class="entry-media">
-          <img src="/static/resource-library.webp" width="1280" height="720" alt="">
-          <span class="entry-tag">Facilities</span>
-        </div>
-        <div class="entry-copy">
-          <div><h2>College Resource Allocation</h2><p>Classrooms, labs, library seats, and sports equipment.</p></div>
-          <span class="entry-open"><span>Open dashboard</span><span class="entry-icon" aria-hidden="true"></span></span>
-        </div>
-      </a>
+
+    <section id="workspaces" class="landing-workspaces" aria-labelledby="workspaces-title" tabindex="-1">
+      <h2 id="workspaces-title">Operations workspaces</h2>
+      <div class="workspace-picker">
+        <a class="workspace-card" href="/fleet" aria-labelledby="fleet-title" aria-describedby="fleet-description">
+          <div class="entry-media">
+            <img src="/static/landing-mobility-768.webp" srcset="/static/landing-mobility-768.webp 768w, /static/landing-mobility-1400.webp 1400w"
+              sizes="(max-width: 620px) calc(100vw - 32px), (max-width: 1448px) 46vw, 660px" width="768" height="357" alt="" decoding="async">
+          </div>
+          <div class="entry-copy">
+            <p class="eyebrow">Mobility</p>
+            <h3 id="fleet-title">Vehicle Fleet Management</h3>
+            <p id="fleet-description" class="entry-description">Track car and bike bays, review gate activity, and approve temporary overflow.</p>
+            <span class="entry-open" aria-hidden="true">Open fleet</span>
+          </div>
+        </a>
+        <a class="workspace-card" href="/resources" aria-labelledby="resources-title" aria-describedby="resources-description">
+          <div class="entry-media">
+            <img src="/static/landing-facilities-768.webp" srcset="/static/landing-facilities-768.webp 768w, /static/landing-facilities-1400.webp 1400w"
+              sizes="(max-width: 620px) calc(100vw - 32px), (max-width: 1448px) 46vw, 660px" width="768" height="357" alt="" decoding="async">
+          </div>
+          <div class="entry-copy">
+            <p class="eyebrow">Facilities</p>
+            <h3 id="resources-title">College Resource Allocation</h3>
+            <p id="resources-description" class="entry-description">Check room and device status, lab bookings, library seats, and equipment availability.</p>
+            <span class="entry-open" aria-hidden="true">Open resources</span>
+          </div>
+        </a>
+      </div>
     </section>
-    <footer class="site-footer"><span>MARTIAN 1.0 · Checkpoint Beta</span><span>CampusFlow · BMSITM</span></footer>
+
+    <footer class="site-footer">
+      <span class="landing-affiliation"><span class="college-crest" aria-hidden="true"><img src="/static/bmsitm-lockup.png" width="2060" height="468" alt=""></span>BMS Institute of Technology &amp; Management</span>
+      <span>MARTIAN 1.0 · Checkpoint Beta · Illustrative photography</span>
+    </footer>
   </main>
 </body>
 </html>

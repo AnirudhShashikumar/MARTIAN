@@ -72,6 +72,11 @@ Original CampusFlow prototype implementation for this event, assisted by OpenAI 
 
 The team-supplied parking screenshot matches the base floorplan in the [existing parking simulation](../presentation/campusflow_parking_sim.html). The frontend uses a WebP export of that base map. Pillow was used to prepare the local image assets and CampusFlow mark. The [illustrative reading-room photograph](static/resource-library.webp) was created with built-in OpenAI ImageGen.
 
+The landing page uses two illustrative photographs under the [Pexels License](https://www.pexels.com/license/). Both are served locally as responsive WebP variants.
+
+- **Mobility** uses Joshua Santos’s parking aerial, published March 16, 2022. Its tree-lined parking aisles remain recognizable in a wide crop. [Drone Shot of a Parking Lot](https://www.pexels.com/photo/drone-shot-of-a-parking-lot-11502892/)
+- **Facilities** uses Grisha Grishkoff’s reading hall, published June 8, 2020. The crop retains the communal desks and geometric ceiling. [Empty reading hall in library in daytime](https://www.pexels.com/photo/empty-reading-hall-in-library-in-daytime-4593942/)
+
 > Create a premium landscape editorial architectural photograph for a college resource dashboard. Interior of a contemporary university reading room in Bengaluru: long natural oak communal tables, aligned chairs, warm cream concrete columns, floor-to-ceiling windows with tasteful horizontal fins, soft sunlight and subtle long shadows, muted greenery outside. Sightline along the tables, centered visual focal point; leave a composition that also works in a center portrait crop. Pale oak, dusty warm ivory, olive hints, elegant believable materials, real architectural magazine photography, calm and uncluttered. Wide landscape canvas, full bleed, no people, typography, logos, watermark or interface.
 
 [Architecture and final-round roadmap](../solution/PROTOTYPE_DESIGN.md) · [Diagrams](../solution/CAMPUSFLOW_DIAGRAMS.md)

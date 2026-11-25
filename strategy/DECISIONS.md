@@ -20,5 +20,6 @@
 | 2026-11-25 | Recommend a verified model choice on variable notes as the Beta priority. | The recommendation extends the selected CampusFlow statement and the existing two-branch workflow. Benchmark against the structured option and keep the fallback releasable. [Round 2 plan](ROUND_2_EXECUTION_PLAN.md) |
 | 2026-11-25 | Make CampusFlow's landing page the entry point for two separate dashboards and place all workflow sections inside them. | Requested by the user. The dashboards share one incident, one audit and the existing approval engine. [Run guide](../prototype/README.md) |
 | 2026-11-25 | Use the supplied BMSITM parking layout as the fleet map. | The matching base floorplan comes from the existing team simulation. The operational counters and actions use the smaller synthetic incident fixture. |
+| 2026-11-25 | Introduce CampusFlow on the landing page with a shared incident example and licensed photographs for Mobility and Facilities. | The example shows existing verified actions. Responsive local assets keep the landing page usable during an offline demo. [Photo credits](../prototype/README.md#tools-and-attribution) |
 
 Pending Beta decisions are the judging rubric, team slot, demo duration, submission cutoff and channel, required files and official end time. Record owner, evidence, approval and rationale when each decision is made.
