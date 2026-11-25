@@ -38,9 +38,7 @@ class HostedTest(HostedClients):
         for url in ("/", "/fleet", "/resources", "/static/landing.css"):
             with self.subTest(url=url):
                 self.assertEqual(client.get(url).status_code, 200)
-        for url in ("/room-console", "/room-panel"):
-            self.assertIn("Classroom hardware runs on the local network", client.get(url).text)
-        for url in ("/static/room_console.html", "/static/room_panel.html", "/api/room/live"):
+        for url in ("/room-console", "/room-panel", "/static/room_console.html", "/static/room_panel.html", "/api/room/live"):
             self.assertEqual(client.get(url).status_code, 404)
         self.assertEqual(client.post("/api/room/telemetry", json={"person_count": 1}).status_code, 404)
         with self.assertRaises(WebSocketDisconnect):
