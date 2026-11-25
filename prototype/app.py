@@ -1,5 +1,6 @@
 """CampusFlow HTTP API."""
 
+import asyncio
 from contextlib import asynccontextmanager, closing
 from dataclasses import dataclass
 import json
@@ -10,13 +11,14 @@ import re
 import sqlite3
 from tempfile import TemporaryDirectory
 from typing import Literal, Optional
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict
 
-from prototype import agent, cctv_stream, scenario
+from prototype import agent, cctv_stream, fleet_vision, scenario
 
 
 mimetypes.add_type("image/webp", ".webp")
@@ -132,7 +134,12 @@ class CctvOverridePayload(BaseModel):
     mode: Literal["toggle", "on", "off", "auto"] = "toggle"
 
 
-def create_app(*, hosted=False, database_url=None, cctv_engine=None):
+class FleetAnalyzeClipPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    filename: str
+
+
+def create_app(*, hosted=False, database_url=None, cctv_engine=None, fleet_clips_dir=None, fleet_analyzer=None):
     @asynccontextmanager
     async def lifespan(application):
         if hosted:
@@ -251,9 +258,61 @@ def create_app(*, hosted=False, database_url=None, cctv_engine=None):
 
         register_resource_routes(application)
         register_cctv_routes(application)
+        register_fleet_routes(
+            application,
+            clips_dir=Path(fleet_clips_dir) if fleet_clips_dir is not None else fleet_vision.VIDEO_CLIPS_DIR,
+            analyzer=fleet_analyzer if fleet_analyzer is not None else fleet_vision.analyze_clip,
+        )
     application.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
     return application
+
+
+def _resolve_clip_path(clips_dir: Path, filename: str) -> Path:
+    if not filename or "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid clip filename.")
+    root = clips_dir.resolve()
+    candidate = (root / filename).resolve()
+    if candidate.parent != root or candidate.suffix.lower() not in fleet_vision.VIDEO_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Unsupported clip filename.")
+    if not candidate.is_file():
+        raise HTTPException(status_code=404, detail="Video clip not found.")
+    return candidate
+
+
+def register_fleet_routes(application, *, clips_dir: Path, analyzer):
+    @application.get("/api/fleet/clips")
+    def fleet_list_clips():
+        clips = fleet_vision.list_video_clips(clips_dir)
+        return [
+            {"name": clip.name, "url": f"/api/fleet/clips/{quote(clip.name)}"}
+            for clip in clips
+        ]
+
+    @application.get("/api/fleet/clips/{filename}")
+    def fleet_serve_clip(filename: str):
+        candidate = _resolve_clip_path(clips_dir, filename)
+        media_type, _ = mimetypes.guess_type(candidate.name)
+        return FileResponse(candidate, media_type=media_type or "video/mp4")
+
+    @application.post("/api/fleet/analyze-clip")
+    async def fleet_analyze_clip(body: FleetAnalyzeClipPayload):
+        candidate = _resolve_clip_path(clips_dir, body.filename)
+        try:
+            result = await asyncio.to_thread(analyzer, candidate)
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Clip analysis failed: {exc}") from exc
+        return {
+            "filename": result.get("filename", candidate.name),
+            "vehicle_type": result["vehicle_type"],
+            "action": result.get("action", "enter"),
+            "plate": result["plate"],
+            "plate_recognized": bool(result.get("plate_recognized", False)),
+            "detected_at_sec": float(result.get("detected_at_sec", 0.0)),
+            "confidence": float(result.get("confidence", 0.0)),
+            "ocr_confidence": float(result.get("ocr_confidence", 0.0)),
+            "processing_sec": float(result.get("processing_sec", 0.0)),
+        }
 
 
 def register_cctv_routes(application):

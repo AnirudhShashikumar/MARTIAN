@@ -699,29 +699,124 @@
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const DB_KEY = 'campusflow_parking_db_v3';
 
-  /* ================= LEFT SCREEN: SEQUENTIAL CLIP LOADER (EMPTY FOR NOW) ================= */
-  // Add clip URLs here in the future (e.g. '/static/clips/clip1.mp4', '/static/clips/clip2.mp4')
-  // and every press of "Load Clip" will play them sequentially one after another.
-  const CLIP_QUEUE = [];
+  /* ================= LEFT SCREEN: SEQUENTIAL VIDEO CLIP LOADER + REAL VISION ================= */
+  let CLIP_QUEUE = [];
   let clipIndex = -1;
+  let clipRunToken = 0;
+  let clipSpawnTimer = null;
 
-  document.getElementById('btnLoadClip').addEventListener('click', () => {
+  function cancelPendingClipSpawn() {
+    clipRunToken += 1;
+    if (clipSpawnTimer !== null) {
+      clearTimeout(clipSpawnTimer);
+      clipSpawnTimer = null;
+    }
+  }
+
+  async function refreshClipQueue() {
+    const status = document.getElementById('clipStatus');
+    try {
+      const res = await fetch('/api/fleet/clips', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const list = await res.json();
+      CLIP_QUEUE = Array.isArray(list) ? list : [];
+      status.textContent = CLIP_QUEUE.length ? `${CLIP_QUEUE.length} clip(s) ready` : 'No clips found';
+    } catch {
+      CLIP_QUEUE = [];
+      status.textContent = 'No clips loaded';
+    }
+  }
+
+  document.getElementById('btnLoadClip').addEventListener('click', async () => {
     const player = document.getElementById('clipPlayer');
     const status = document.getElementById('clipStatus');
     if (!CLIP_QUEUE.length) {
-      status.textContent = 'No clips loaded yet';
+      await refreshClipQueue();
+    }
+    if (!CLIP_QUEUE.length) {
+      status.textContent = 'No clips found in video_clips/';
       return;
     }
+
+    cancelPendingClipSpawn();
+    const myToken = clipRunToken;
+
     clipIndex = (clipIndex + 1) % CLIP_QUEUE.length;
     const item = CLIP_QUEUE[clipIndex];
     const url = typeof item === 'string' ? item : item.url;
-    const label = typeof item === 'string' ? `Clip ${clipIndex + 1}` : (item.label || `Clip ${clipIndex + 1}`);
+    const filename = typeof item === 'string' ? item.split('/').pop() : item.name;
+    const prefix = `Clip ${clipIndex + 1}/${CLIP_QUEUE.length}`;
+
     player.hidden = false;
     player.src = url;
     player.currentTime = 0;
     player.play().catch(() => {});
-    status.textContent = `${label} (${clipIndex + 1}/${CLIP_QUEUE.length})`;
+    status.textContent = `${prefix} · Scanning…`;
+    setStory(`Scanning ${filename} with YOLO vehicle + plate detector…`, 'sky');
+
+    try {
+      const res = await fetch('/api/fleet/analyze-clip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (myToken !== clipRunToken) return;
+
+      const vType = data.vehicle_type === 'bike' ? 'bike' : 'car';
+      const vLabel = vType === 'bike' ? 'Bike' : 'Car';
+      const action = data.action === 'exit' ? 'exit' : 'enter';
+      const plate = String(data.plate || '').trim() || (vType === 'bike' ? `BK-${state.bikeSeq}` : `CAR-${state.carSeq}`);
+      const detectedAt = Number(data.detected_at_sec || 0);
+      const targetSec = detectedAt + 3.0;
+      const currentSec = Number.isFinite(player.currentTime) ? player.currentTime : 0;
+      const delayMs = Math.max(0, Math.round((targetSec - currentSec) * 1000));
+
+      status.textContent = `${prefix} · ${action === 'exit' ? 'EXIT' : vLabel.toUpperCase()} · ${plate}`;
+      if (action === 'exit') {
+        if (delayMs > 150) {
+          setStory(
+            `Detected ${vLabel} (${plate}) exiting at ${detectedAt.toFixed(1)}s — releasing bay in ${(delayMs / 1000).toFixed(1)}s…`,
+            'warn'
+          );
+        } else {
+          setStory(`Detected ${vLabel} (${plate}) exiting — releasing parking bay…`, 'warn');
+        }
+      } else if (delayMs > 150) {
+        setStory(
+          `Detected ${vLabel} (${plate}) at ${detectedAt.toFixed(1)}s — spawning in ${(delayMs / 1000).toFixed(1)}s…`,
+          'sky'
+        );
+      } else {
+        setStory(`Detected ${vLabel} (${plate}) — dispatching to parking bay…`, 'sky');
+      }
+
+      clipSpawnTimer = setTimeout(() => {
+        clipSpawnTimer = null;
+        if (myToken !== clipRunToken) return;
+        if (action === 'exit') {
+          const matchingSlot = state.slots.find(s => s.status === 'OCCUPIED' && s.vehicleId === plate);
+          if (matchingSlot) removeSlotVehicle(matchingSlot);
+          else removeOne(vType === 'bike' ? 'BIKE' : 'CAR');
+        } else if (vType === 'bike') {
+          addBike(plate);
+        } else {
+          addCar(plate);
+        }
+      }, delayMs);
+    } catch (err) {
+      if (myToken !== clipRunToken) return;
+      status.textContent = `${prefix} · Analysis failed`;
+      setStory(`Clip analysis error: ${err.message || 'could not analyze clip'}`, 'alert');
+      toast(`Vision analysis failed: ${err.message || 'error'}`, 'err');
+    }
   });
+
+  refreshClipQueue();
 
   /* ================= RIGHT SCREEN: EXACT e:\campusflow_parking_sim.html ENGINE ================= */
   const CAR_COLORS = ['#38bdf8', '#60a5fa', '#e2e8f0', '#fbbf24', '#a78bfa', '#34d399'];
@@ -1320,6 +1415,7 @@
   }
 
   function clearDemos() {
+    cancelPendingClipSpawn();
     state.demoTimers.forEach(t => clearTimeout(t));
     state.demoTimers = [];
   }
