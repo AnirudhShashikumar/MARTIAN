@@ -78,3 +78,45 @@ Each row estimates an attainable score under the official rubric **if** the prop
 AccessRelay leads on feasibility and has direct operational evidence. It projects 4/5 on PoC because a single scenario and API dependency still need reliability testing, 4/5 on Tech because model contract and latency are unmeasured, and 4/5 on Market because documented workflows and named incumbents support the wedge while local frequency and willingness to adopt remain unknown. Its narrow fixture, single actor for approval and explicit fallback support the 5/5 Execution target. Absent a live PoC, the rubric’s PoC band is 0–1, so scoring the three other categories at the targets above would yield **13–14/20**, with a weak first tie-breaker. No score has been earned.
 
 Confidence is **moderate** for AccessRelay and BenchShift, supported by direct documentation of the institutional workflow, and moderate for ExamRelay on problem reality with lower confidence on delivery. DormPivot through PolicyReturn have low-to-moderate confidence. We penalized a narrow conventional rules-only role, unsupported market assumptions, broader integration dependencies, privacy-sensitive workflows and concepts whose first demo could look like existing scheduling or case tools. Designs and risks appear in the [opportunity catalog](OPEN_INNOVATION_IDEAS.md). The [judge tournament](../evaluation/JUDGE_TOURNAMENT.md) gives the strongest objections.
+
+## Final Round 1 comparison
+
+**Recommend CampusFlow C.** One late schedule change, one parking exception and one room-state exception. CampusFlow ties the classroom-access alternative under current evidence and wins the official feasibility tie-break, provided the model's role and the state changes are shown live. The older 17/20 estimate for AccessRelay was made before this side-by-side reassessment. Use the current estimates for this decision.
+
+Version A minimally refines the starting idea. B gives it an operational action and guardrail. C shows an exception, replanning and verified change. Each entry is a projected total out of 20 under the official rubric, conditional on evidence and an authorized working PoC. They are comparative assessments.
+
+| Candidate and underlying problem | A · original | B · competitive refinement | C · competition version | Remaining issue · evidence confidence / build risk |
+| --- | --- | --- | --- | --- |
+| Parking only. Attendants have incomplete, changing vehicle-class capacity. | Slot and in/out display **10** | Capped car and bike allocations and expiry **12** | Interpret schedule demand, propose verified overflow and reconcile exits **14** | T2 documents much of the core. Model value narrows once inputs are typed. Moderate / low. |
+| Classroom/resources only. Academic and facilities staff face fragmented booking, inventory and occupancy. | Camera vacancy plus resource catalog **10** | Combine timetable, confidence and staff guard **12** | Replan after a conflicting booking or occupied frame, verify power and catalog changes **14** | Conventional room automation already handles vacancy. A full catalog is too broad. Moderate / medium. |
+| **CampusFlow.** A late class change creates a gate demand exception and leaves a room in an uncertain state. | Two panels with rules **11** | One joined incident and two verified actions **14** | Evidence-based interpretation, independent role approvals, recheck on occupancy change and held branch **16** | Two operations could appear loosely coupled. Maintain one incident ID and derive both checks from the confirmed revised session. Moderate / medium. |
+| AccessRelay. A room withdrawal breaks step-free access and instructor coordination. | Show affected rooms **11** | Validate an accessible replacement and record acknowledgment **14** | Block stale approval and verify a reachable rebooking **16** | Better institutional problem documentation. More fixture and accessibility validation needed. Moderate / medium. |
+| BenchShift. A lab disruption invalidates bookings and technician coverage. | Show instruments and hours **10** | Verify a compatible substitute **13** | Recover a booking after the substitute or operator changes **15** | Real compatibility and prioritization remain assumptions. Moderate / medium. |
+| ExamRelay. A venue or proctor change can compromise approved exam conditions. | New room and proctor planner **10** | Revalidate anonymous assessment constraints **13** | Reject stale staffing and commit a verified alternative **14** | Privacy and interval stacking increase the PoC burden. Moderate / medium-high. |
+| DormPivot. Notices and alternatives can leave a floor uncovered. | Send outage notices **9** | Allocate verified capacity by floor **12** | Recover from an unavailable option and confirm receipt **14** | Can look like notification software without an explicit coverage result. Moderate / medium. |
+| ReUse Dispatch. Asset descriptions and department handoffs are incomplete. | Surplus listing **9** | Verify suitability and approve a short claim **12** | Reallocate an asset after an expired pickup and verify receipt **14** | Existing reuse programs and lower immediate stakes make the pitch harder. Moderate / medium. |
+| Integrated AccessRelay. A disrupted practical needs room, equipment and assessment recovery at once. | Room plus equipment availability **11** | Verified single-cohort relocation and loan **14** | Two cohorts, stale loan, transparent conditions and verified handoff **15** | Strong story. The lab taxonomy and cross-role conditions make a reliable 75-second walkthrough harder. Moderate / high. |
+
+### Official-rubric tie-break and sensitivity
+
+| Finalist | PoC | Technical | Market | Feasibility | Total |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| CampusFlow C | 4 | 4 | 3 | 5 | **16/20** |
+| AccessRelay C | 4 | 4 | 4 | 4 | **16/20** |
+| BenchShift C | 4 | 4 | 3 | 4 | **15/20** |
+
+- **PoC.** Each can reach a coherent 4-mark flow if authorized and demonstrated. The more complex integrated assessment idea projects 3 on PoC because it adds another ledger and additional rules to the same demo time.
+- **Technical.** CampusFlow's one model, two explicit permission boundaries and independent transaction rechecks are sound. Real model timing and sample-video reliability are to be measured.
+- **Market.** CampusFlow and BenchShift have named comparators and public workflow evidence. The cross-system demand gap and its local impact are unquantified. AccessRelay has stronger direct documentation of disruption and handoffs.
+- **Feasibility.** CampusFlow leads on a precise fixture and a browser-only fallback. A real hardware dependency or a full resource catalog would remove this advantage.
+
+Illustrative sensitivity using PoC / Technical / Market / Feasibility weights, scaled to 100. Technical is a proxy for innovation and Market is a proxy for evidenced impact.
+
+| Sensitivity | Weights | CampusFlow | AccessRelay | BenchShift |
+| --- | --- | ---: | ---: | ---: |
+| Official | 25 / 25 / 25 / 25 | **80** | **80** | 75 |
+| Technical and innovation emphasis | 25 / 40 / 15 / 20 | **81** | 80 | 77 |
+| Evidenced impact emphasis | 20 / 20 / 40 / 20 | 76 | **80** | 72 |
+| Feasibility emphasis | 25 / 20 / 10 / 45 | **87** | 80 | 78 |
+
+If the team cannot demonstrate a real model-driven decision and a verified action, the rubric PoC band could fall to 0–1. Keeping the same non-PoC forecasts yields 12–13/20 for CampusFlow. A storyboard can explain the design accurately. Its presence does not earn working-code credit. [Rubric](../context/JUDGING_CRITERIA.md) · [Judges](../evaluation/JUDGE_REVIEW.md)

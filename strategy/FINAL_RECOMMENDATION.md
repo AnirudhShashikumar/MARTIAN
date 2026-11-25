@@ -1,6 +1,22 @@
 # Checkpoint Alpha decision package
 
-The latest recommendation is the [integrated AccessRelay statement](INTEGRATED_PROBLEM_STATEMENT.md) for practical-assessment continuity. This research package preserves the comparison that preceded that synthesis.
+## Current recommendation · CampusFlow
+
+**Submit CampusFlow C, “Coordinating Campus Parking and Shared Resources During Demand Changes.”** The core problem is that a late timetable change creates parking demand and a potentially vacant room that separate teams must verify. CampusFlow interprets one change, proposes time-limited overflow and a room-state response, and verifies each approved outcome. If room evidence changes, it blocks or revises that action and preserves the verified parking decision.
+
+**Defining innovation.** The same confirmed schedule change drives two separate, policy-checked actions, each with its own approval and verification. The agent resolves ambiguous language and chooses what to verify. A conventional rules engine performs the bookings, checks and device policy. The strongest demonstration compares a plain schedule change with a note such as “Lab 2; running 20 minutes late” and shows why the second case needs a lookup before any change.
+
+**Stakeholders.** Parking attendant, timetable coordinator and facilities supervisor are primary operators. Students, staff and visitors experience the outcome. The user journey begins at the revised session and ends when both operational outcomes are verified or responsibly escalated.
+
+**Projected 16/20, moderate confidence.** It ties the refined AccessRelay concept and wins on the official feasibility tie-break in the current assessment. AccessRelay wins if evidenced impact dominates. CampusFlow C depends on one working end-to-end proof, a bounded scope and a clear causal link between the revised session and both actions. The 25%-weighted PoC and first tie-break make organizer permission for working code the priority. [Scores and sensitivity](PROBLEM_SELECTION.md#final-round-1-comparison)
+
+**Why this version.** Parking-only and vacancy-only variants have strong conventional comparators and a narrower use for model judgment. Integrated assessment recovery has strong stakes but requires more fixture assumptions and cross-role checks. CampusFlow uses one gate, one classroom and one set of sample events. Lab, library and sports-equipment rows illustrate extension. Full live inventory integrations and hardware belong after the reliable core exists.
+
+**Ready to use.** The formal [organizer statement](CAMPUSFLOW_PROBLEM_STATEMENT.md#organizer-ready-problem-statement), [product concept](../solution/PRODUCT_CONCEPT.md), [innovation](../solution/INNOVATION.md), [architecture](../solution/AGENTIC_ARCHITECTURE.md) and [build plan](../solution/FEASIBILITY.md) support the [seven-slide information document](../presentation/SLIDE_CONTENT.md). It includes paste-ready slide copy, visual directions, a 75-second walkthrough and presenter timing. Use the [pitch](../presentation/PITCH_SCRIPT.md) and [judge defense](../presentation/JUDGE_QA.md) to rehearse.
+
+## Earlier AccessRelay decision package
+
+The remaining sections preserve the earlier classroom-continuity research and decision, followed later by the [integrated AccessRelay proposal](INTEGRATED_PROBLEM_STATEMENT.md). The current recommendation is above.
 
 ## 1. Executive recommendation
 
