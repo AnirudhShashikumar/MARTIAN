@@ -113,7 +113,7 @@ class ResourceTests(TestCase):
         self.assertEqual(results, [200, 409])
         self.assertEqual(sum(row["status"] == "booked" for row in self.state()["requests"]), 1)
 
-    def test_library_expiry_fifo_claim_checkin_and_protected_capacity(self):
+    def test_library_expiry_and_release_assign_in_fifo_order(self):
         original = self.approve(self.submit("library"))
         self.assertEqual(original["assets"], ["Q10"])
         second = self.submit("library", requester="DEMO-02", waitlist=True)
@@ -122,21 +122,54 @@ class ResourceTests(TestCase):
         self.assertEqual(third["status"], "queued")
         self.command("library", "advance")
         self.assertEqual(self.row(original["id"])["status"], "expired")
-        offered = self.row(second["id"])
-        self.assertEqual(offered["status"], "offered")
-        self.assertEqual(offered["assets"], ["Q10"])
+        held = self.row(second["id"])
+        self.assertEqual(held["status"], "held")
+        self.assertEqual(held["assets"], ["Q10"])
+        self.assertIsNone(held["proposal"])
         self.assertEqual(self.row(third["id"])["status"], "queued")
-        held = self.transition(offered, "claim")
         occupied = self.transition(held, "check_in")
         self.transition(occupied, "release")
-        self.assertEqual(self.row(third["id"])["status"], "offered")
+        self.assertEqual(self.row(third["id"])["status"], "held")
+        self.assertEqual(self.row(third["id"])["assets"], ["Q10"])
+        events = [event for event in self.state()["audit"] if event["request_id"] == third["id"]]
+        self.assertTrue(any(event["title"] == "Assigned seat read back" for event in events))
 
-        protected = self.submit("library", requester="DEMO-04", start="14:10", protected=True)
+    def test_protected_request_switches_from_existing_general_seat(self):
+        general = self.transition(self.approve(self.submit("library")), "check_in")
+        waiting = self.submit("library", requester="DEMO-02", waitlist=True)
+        protected = self.submit("library", protected=True)
+        self.assertIn("release Q10", protected["reason"])
         self.approve(protected, status=409, role="Requester")
+        self.assertEqual(self.row(general["id"])["status"], "checked_in")
+        self.assertEqual(self.row(waiting["id"])["status"], "queued")
+
+        with patch("prototype.resources.verify", side_effect=resources.ResourceError("Test readback mismatch")):
+            self.approve(protected, status=409)
+        self.assertEqual(self.row(general["id"])["status"], "checked_in")
+        self.assertEqual(self.row(waiting["id"])["status"], "queued")
+
         protected = self.approve(protected)
         self.assertIn(protected["assets"][0], {"Q11", "Q12"})
+        self.assertEqual(self.row(general["id"])["status"], "released")
+        self.assertEqual(self.row(waiting["id"])["assets"], ["Q10"])
+        self.assertEqual(self.row(waiting["id"])["status"], "held")
         self.transition(protected, "check_in", status=409)
         self.assertEqual(self.transition(protected, "check_in", role="Library staff")["status"], "checked_in")
+
+    def test_protected_waitlist_switch_releases_general_seat_in_fifo_order(self):
+        general = self.approve(self.submit("library"))
+        first_protected = self.approve(self.submit("library", requester="DEMO-02", protected=True))
+        self.approve(self.submit("library", requester="DEMO-03", protected=True))
+        waiting = self.submit("library", requester="DEMO-04", waitlist=True)
+        switch = self.submit("library", protected=True, waitlist=True)
+        self.assertEqual(switch["status"], "queued")
+
+        self.transition(first_protected, "release", role="Library staff")
+        self.assertEqual(self.row(general["id"])["status"], "released")
+        self.assertEqual(self.row(switch["id"])["status"], "held")
+        self.assertEqual(self.row(switch["id"])["assets"], first_protected["assets"])
+        self.assertEqual(self.row(waiting["id"])["status"], "held")
+        self.assertEqual(self.row(waiting["id"])["assets"], ["Q10"])
 
     def test_stock_reservation_partial_return_inspection_and_idempotency(self):
         reserved = self.approve(self.submit("equipment", quantity=2))

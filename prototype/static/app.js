@@ -44,6 +44,7 @@ let cctv = {
 let cctvBusy = false;
 let cctvPollTimer = null;
 let cctvStreamToken = 0;
+let gateCamera;
 
 function escape(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -566,7 +567,34 @@ function renderAudit() {
   </div>${rows ? `<ol class="full-log">${rows}</ol>` : '<p class="empty">No scenario actions yet.</p>'}`;
 }
 
+function renderGateCamera() {
+  if (view !== "fleet") return;
+  const existing = $("#fleet-camera-shell");
+  if (section !== "parking") {
+    if (existing) {
+      gateCamera?.unmount(existing);
+      existing.remove();
+    }
+    return;
+  }
+  if (existing) return;
+
+  const grid = $(".dashboard-grid");
+  const shell = document.createElement("div");
+  shell.id = "fleet-camera-shell";
+  shell.innerHTML = '<p class="panel" role="status">Loading Gate A camera…</p>';
+  grid.id = "fleet-incident";
+  grid.before(shell);
+  import("/static/fleet/camera.mjs").then((module) => {
+    gateCamera = module;
+    if (shell.isConnected) module.mount(shell);
+  }).catch(() => {
+    if (shell.isConnected) shell.innerHTML = '<p class="error" role="alert">The Gate A camera could not load.</p>';
+  });
+}
+
 function renderSection() {
+  renderGateCamera();
   $("#subtabs").querySelectorAll("button").forEach((tab) => {
     if (tab.dataset.section === section) tab.setAttribute("aria-current", "true");
     else tab.removeAttribute("aria-current");
@@ -726,4 +754,5 @@ document.querySelector(`.workspaces-nav a[href="${workspace.path}"]`).setAttribu
 window.addEventListener("pageshow", (event) => {
   if (event.persisted && !busy) loadState();
 });
+renderGateCamera();
 loadState();

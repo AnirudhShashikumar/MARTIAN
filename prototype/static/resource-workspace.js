@@ -227,7 +227,8 @@ function fields(panel) {
     (tab === "library" ? '<label class="resource-check"><input type="checkbox" name="protected"' +
       (draft.protected ? " checked" : "") + '>Request a protected seat · simulated eligibility</label>' : "") +
     (tab !== "labs" ? '<label class="resource-check"><input type="checkbox" name="waitlist"' +
-      (draft.waitlist ? " checked" : "") + '>Join the waitlist if this window is full</label>' : "");
+      (draft.waitlist ? " checked" : "") + (tab === "library"
+        ? '>Join the waitlist for automatic assignment</label>' : '>Join the waitlist if this window is full</label>') : "");
 }
 
 function form(panel) {
@@ -259,7 +260,8 @@ function reviewButtons(panel, row) {
   const proposal = row.proposal;
   if (!proposal) return "";
   const choices = proposal.choices.map((choice, index) => {
-    const label = index ? "Approve alternative" : configs[panel.tab].confirm;
+    const label = index ? "Approve alternative" :
+      row.tab === "library" && row.protected ? "Approve protected seat" : configs[panel.tab].confirm;
     const action = button(label, "review", {
       id: row.id, proposal: proposal.id, choice: choice.id, role: proposal.role, decision: "approve",
     }, !index, panel.busy);
@@ -291,10 +293,13 @@ function rowActions(panel, row) {
   if (row.tab === "labs" && row.status === "booked") {
     return action("Reschedule", "reschedule") + action("Request cancellation", "cancel", "Lab coordinator");
   }
-  if (row.status === "offered") return action("Claim offer", "claim", staff, true) +
-    (row.tab === "library" ? action("Release offer", "release", staff) : action("Decline offer", "cancel"));
-  if (row.status === "held") return action("Check in", "check_in", staff, true, {}, panel.state.clock < row.start) +
+  if (row.status === "offered" && row.tab === "equipment") {
+    return action("Claim offer", "claim", staff, true) + action("Decline offer", "cancel");
+  }
+  if (row.status === "held" || (row.status === "offered" && row.tab === "library")) {
+    return action("Check in", "check_in", staff, true, {}, panel.state.clock < row.start) +
     action("Release seat", "release", staff);
+  }
   if (row.status === "checked_in") return action("Release seat", "release", staff);
   if (row.status === "reserved") return action("Confirm pickup", "checkout", "Sports desk", true, {}, panel.state.clock < row.start) +
     action("Cancel reservation", "cancel");
@@ -314,7 +319,8 @@ function requestRows(panel) {
   const list = rowsFor(panel);
   if (!list.length) return '<p class="resource-empty">Requests and verified outcomes will appear here.</p>';
   return '<ul class="resource-requests">' + list.map((row) => {
-    const label = row.status === "checked_out" && panel.state.clock >= row.end ? "Overdue" : statuses[row.status];
+    const label = row.status === "checked_out" && panel.state.clock >= row.end ? "Overdue" :
+      row.status === "offered" && row.tab === "library" ? "Held" : statuses[row.status];
     const tone = ["unavailable", "expired", "queued"].includes(row.status) || label === "Overdue"
       ? "is-held" : "is-ready";
     const hold = ["offered", "held"].includes(row.status) ? ' · Expires ' + clock(row.hold_until) : "";

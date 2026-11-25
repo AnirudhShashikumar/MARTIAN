@@ -1,0 +1,430 @@
+#fleet-camera-shell {
+  margin-bottom: 20px;
+}
+#fleet-incident {
+  scroll-margin-top: 18px;
+}
+.fleet-camera {
+  --gate-surface: #f9faf5;
+  --gate-line: #dce3d7;
+  --gate-ink: #1f3026;
+  --gate-muted: #546157;
+  display: grid;
+  gap: 13px;
+}
+.fleet-replay-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  padding: clamp(20px, 3vw, 42px);
+  gap: 18px;
+  color: #f2f8ef;
+  background: radial-gradient(ellipse at 92% 12%, #355c49, transparent 66%), #1d342a;
+  border-radius: 18px;
+}
+.fleet-replay-head h2 {
+  margin: 0;
+  font-size: clamp(2.25rem, 5vw, 4.35rem);
+  line-height: 1;
+  letter-spacing: -.065em;
+  font-weight: 670;
+}
+.fleet-source, .fleet-sub {
+  color: #d5e7d7;
+}
+.fleet-source {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: .8rem;
+  font-weight: 660;
+}
+.fleet-source > span:first-child {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a7d9b7;
+}
+.fleet-sub {
+  max-width: 48ch;
+  margin: 11px 0 0;
+  font-size: .95rem;
+}
+.fleet-replay-actions, .fleet-transport, .fleet-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fleet-replay-actions .primary {
+  color: #1c382a;
+  background: #daeedb;
+  border-color: #daeedb;
+}
+.fleet-replay-actions .primary:hover {
+  background: #c6e4cb;
+}
+.fleet-replay-actions .secondary {
+  color: #f5fbf3;
+  background: transparent;
+  border-color: #759383;
+}
+.fleet-replay-actions .secondary:hover {
+  background: #314f42;
+}
+.fleet-replay-head :focus-visible {
+  outline-color: #d7f0db;
+}
+.fleet-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.fleet-stats div {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--gate-line);
+  border-radius: 12px;
+  color: var(--gate-ink);
+  background: var(--gate-surface);
+}
+.fleet-stats span, .fleet-stats small {
+  font-size: .76rem;
+  color: var(--gate-muted);
+  line-height: 1.25;
+}
+.fleet-stats strong {
+  font-size: 1.68rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.fleet-views {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 13px;
+  align-items: start;
+  scroll-margin-top: 12px;
+}
+.fleet-card {
+  min-width: 0;
+  border: 1px solid var(--gate-line);
+  border-radius: 15px;
+  padding: clamp(11px, 1.6vw, 20px);
+  background: var(--gate-surface);
+  color: var(--gate-ink);
+}
+.fleet-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 11px;
+}
+.fleet-card-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.1;
+  letter-spacing: -.035em;
+}
+.fleet-card-head p, .fleet-card-note {
+  margin: 4px 0 0;
+  color: var(--gate-muted);
+  font-size: .78rem;
+}
+.fleet-camera-status {
+  color: #345847;
+  background: #e5eee4;
+  border-radius: 15px;
+  padding: 4px 7px;
+  font-weight: 650;
+  font-size: .7rem;
+  line-height: 1.2;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.fleet-camera-status.is-overflow {
+  color: #6d3e17;
+  background: #f7e6c8;
+}
+.gate-picture, .fleet-map-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #244035;
+  isolation: isolate;
+}
+.gate-picture video, .fleet-map-stage img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.gate-picture canvas, .fleet-map-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.gate-inference {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 9px;
+}
+.gate-inference div {
+  padding: 8px;
+  border: 1px solid var(--gate-line);
+  border-radius: 8px;
+  background: #fff;
+}
+.gate-inference span, .gate-inference strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.gate-inference span {
+  font-size: .69rem;
+  color: var(--gate-muted);
+}
+.gate-inference strong {
+  font-size: .8rem;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.fleet-transport, .fleet-legend {
+  margin-top: 9px;
+}
+.fleet-transport label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--gate-muted);
+  font-weight: 620;
+  font-size: .73rem;
+}
+.fleet-transport select {
+  max-width: 100%;
+  min-height: 31px;
+  border: 1px solid var(--gate-line);
+  border-radius: 6px;
+  color: var(--gate-ink);
+  background: #fff;
+  padding: 4px 6px;
+  font: inherit;
+}
+.fleet-transport .button, .fleet-ledger .button {
+  min-height: 32px;
+  font-size: .73rem;
+  padding: 5px 8px;
+}
+.fleet-map-card {
+  padding: clamp(8px, 1.2vw, 15px);
+  background: #0a0c10;
+  border-color: #272c36;
+  color: #f1f5f9;
+}
+.fleet-map-card .fleet-card-head {
+  margin-inline: 3px;
+}
+.fleet-map-card .fleet-card-head p {
+  color: #9daabd;
+}
+.fleet-map-stage {
+  container-type: inline-size;
+  background: #131820;
+  border: 1px solid #3a404a;
+  padding-block: 2px;
+}
+.fleet-map-stage canvas {
+  inset-block: 2px;
+  height: calc(100% - 4px);
+}
+.fleet-map-story, .fleet-map-sign, .fleet-map-destination, .fleet-map-gate {
+  position: absolute;
+  pointer-events: none;
+}
+.fleet-map-story, .fleet-map-sign {
+  --map-signal: #4ade80;
+}
+.fleet-map-stage [data-tone="amber"] { --map-signal: #fbbf24; }
+.fleet-map-stage [data-tone="red"] { --map-signal: #f87171; }
+.fleet-map-story {
+  z-index: 1;
+  top: 1.5%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55em;
+  width: max-content;
+  max-width: 94%;
+  padding: .42em .95em;
+  border: 1px solid #515a67;
+  border-radius: 20px;
+  background: #121620f2;
+  box-shadow: 0 4px 13px #03050a54;
+  color: #f1f5f9;
+  font-size: clamp(9px, 1.8cqw, 18px);
+  font-weight: 680;
+  line-height: 1.25;
+  text-align: center;
+}
+.fleet-map-story::before, .fleet-map-sign-head::before {
+  content: "";
+  width: .62em;
+  height: .62em;
+  flex: 0 0 .62em;
+  border-radius: 50%;
+  background: var(--map-signal);
+}
+.fleet-map-sign, .fleet-map-gate, .fleet-map-destination {
+  font-family: ui-monospace, monospace;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.fleet-map-sign {
+  top: 49.3%;
+  left: 27.55%;
+  display: grid;
+  min-width: 18.8%;
+  gap: .43em;
+  padding: .4em .52em .58em;
+  border: 1px solid #38bdf8;
+  border-radius: clamp(4px, .65cqw, 8px);
+  color: var(--map-signal);
+  background: #070a10;
+  font-size: clamp(5px, 1.19cqw, 11px);
+}
+.fleet-map-sign[data-tone="amber"], .fleet-map-sign[data-tone="red"] {
+  border-color: var(--map-signal);
+}
+.fleet-map-sign span {
+  padding-inline: .25em;
+  white-space: nowrap;
+}
+.fleet-map-sign .fleet-map-sign-head {
+  display: flex;
+  align-items: center;
+  gap: .45em;
+  padding: .27em .44em;
+  border-radius: 2px;
+  color: #93c5fd;
+  background: #131c2e;
+  letter-spacing: .05em;
+}
+.fleet-map-destination, .fleet-map-gate {
+  border: 1px solid #f59e0b;
+  border-radius: 4px;
+  color: #fde68a;
+  background: #080b11e8;
+  font-size: clamp(6px, 1.23cqw, 12px);
+  white-space: nowrap;
+}
+.fleet-map-destination {
+  top: 8%;
+  left: 75%;
+  padding: .35em .7em;
+}
+.fleet-map-zone-two {
+  top: 77%;
+  left: 71%;
+  border-color: #38bdf8;
+  color: #bae6fd;
+}
+.fleet-map-gate {
+  top: 87.7%;
+  left: 50.08%;
+  transform: translateX(-50%);
+  display: flex;
+  border-color: #cbd5e159;
+  color: #6ee7b7;
+}
+.fleet-map-gate span {
+  padding: .35em .65em;
+}
+.fleet-map-gate span + span {
+  border-left: 1px solid #cbd5e140;
+  color: #fca5a5;
+}
+.fleet-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #bac5d3;
+  font-size: .68rem;
+  white-space: nowrap;
+}
+.fleet-legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  color: #10b981;
+  background: #10b98138;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+.fleet-legend .legend-used { color: #f87171; background: #ef444447; }
+.fleet-legend .legend-overflow { color: #fbbf24; background: #f59e0b42; }
+.fleet-legend .legend-protected { color: #38bdf8; background: #38bdf846; }
+.fleet-legend .legend-camera { color: #38bdf8; background: #101929; border-radius: 50%; }
+.fleet-table-wrap {
+  max-height: 300px;
+  overflow: auto;
+  border: 1px solid var(--gate-line);
+  border-radius: 9px;
+  scrollbar-color: #b6c7b6 #f1f4ee;
+}
+.fleet-camera table {
+  width: 100%;
+  min-width: 715px;
+  border-collapse: collapse;
+}
+.fleet-camera thead {
+  position: sticky;
+  top: 0;
+  background: #ecf1e8;
+}
+.fleet-camera th, .fleet-camera td {
+  padding: 7px 9px;
+  font-size: .78rem;
+  border-bottom: 1px solid #e3eadf;
+  text-align: left;
+}
+.fleet-camera th {
+  line-height: 1.2;
+}
+.fleet-camera td small {
+  white-space: nowrap;
+  color: var(--gate-muted);
+}
+.fleet-camera td:nth-child(-n+5) { white-space: nowrap; }
+.fleet-registration { font-variant-numeric: tabular-nums; }
+.fleet-decision {
+  display: inline-block;
+  padding: 3px 5px;
+  background: #e0eddf;
+  color: #27523a;
+  border-radius: 6px;
+  line-height: 1.2;
+  font-weight: 650;
+}
+.fleet-decision.is-held {
+  color: #6e451c;
+  background: #f4e8d8;
+}
+.fleet-camera-problem {
+  padding: 12px;
+  background: #f6e8e1;
+  color: #822e20;
+  border-radius: 8px;
+}
+@media (max-width: 900px) {
+  .fleet-views { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .fleet-replay-head { align-items: start; flex-direction: column; }
+  .fleet-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fleet-transport label { flex-wrap: wrap; }
+}

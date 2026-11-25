@@ -52,12 +52,51 @@ Use a fresh browser session at [localhost:8888](http://127.0.0.1:8888/). Set `CA
 
 The fleet map shows the BMSITM Gate A approach, the main bike and car lots, and Bike Zone 2. The parking counters and actions use the smaller synthetic bay set in the incident. Both dashboards read the same incident and decision audit.
 
+### Gate A camera demo
+
+Open **Vehicle Fleet → Parking overview** and select **Play footage**. The default 32.5-second reel combines three real clips. Reviewed YOLOX vehicle tracks identify the crossing evidence. Each crossing uses the video clock to trigger an animated car or motorcycle and a policy decision on the campus map. The example uses anonymous track IDs and a seeded parking ledger. The car lot starts full so the first arrival exercises the overflow reserve.
+
+| Real reel time | Map action |
+| --- | --- |
+| `0:07.80` | A car crosses the driveway gate. The agent routes it to overflow bay `OC-01`. |
+| `0:21.15` | A motorcycle enters the garage access aisle. The agent allocates `B-08`. |
+| `0:27.00` | A car leaves the garage approach and releases `C-01`. |
+| `0:31.35` | A motorcycle crosses the exit path and releases `B-01`. |
+
+The video combines Taryn Elliott’s [car gate arrival](https://www.pexels.com/video/a-car-entering-the-gates-of-a-property-onward-to-its-driveway-3782429/), Michele Lazzari’s [motorcycle garage approach](https://www.pexels.com/video/motorcycle-rider-in-underground-parking-lot-31901416/), and Ivan Chumak’s [mixed garage exit](https://www.pexels.com/video/urban-parking-scene-with-cars-and-motorbike-37508953/) under the [Pexels license](https://www.pexels.com/license/). Faces and plate regions in the garage cuts are masked. The car approach uses an overhead angle. Crossing times were reviewed against the cut and the [OpenCV Zoo YOLOX model](https://github.com/opencv/opencv_zoo/tree/main/models/object_detection_yolox) detections. The real reel plays reviewed tracks, and the parking engine applies its policy as the video plays.
+
+Select **Synthetic model test** in the camera feed picker and press **Play & analyze** for fresh inference. The 5:30 synthetic clip uses a fitted car/motorcycle classifier and a separate registration glyph recognizer on browser video pixels. Direction comes from crossing both sides of the calibrated gate line. The registration model requires repeated agreeing readings. Both feeds work offline with no API key and offer CSV export.
+
+| Clip time | What to show |
+| --- | --- |
+| `0:06` and `0:14` | A car and a motorbike fill the last general bays for their respective classes. |
+| `0:22` and `0:30` | Both vehicle classes reach capacity and use their designated overflow reserve. |
+| `0:46` and `0:54` | A car waits when its overflow reserve is also full. After a confirmed departure, the agent assigns the freed bay to the waiting registration. |
+| `1:10` through `1:26` | A duplicate entry, an unreadable plate, and an exit with no matching bay are held for staff review. |
+
+Use **Jump to** to replay events from verified model observations. Use **Run models from start** to return to fresh browser inference. The camera exercise uses a separate synthetic ledger. **Shared incident** links to the incident involving parking and C-101. Automatic overflow uses marked reserve bays. Accessible and reserved bays are outside the automatic allocation pool.
+
+The fixture tests matched all 32 crossings at both 8 and 5 samples per second, including 31 exact registrations and one unreadable plate. The classifier matched 120 held-out synthetic sprite variants. These measurements describe this calibrated clip and its synthetic assets. The models target the clip’s fixed lanes and test plate font.
+
+OpenPK provides 5-minute parking scenes with plates intentionally unidentifiable. The 5:17 Wikimedia clip demonstrates camera zoom. The selected real reel prioritizes visible gate movements in both directions. The longer test sequence provides reproducible registrations and controlled overflow. [OpenPK parking dataset](https://github.com/ciprianiacobescu/OpenPK) · [Wikimedia camera demonstration](https://commons.wikimedia.org/wiki/File:BLK-HDPTZ12_Security_Camera_Parkng_Lot_Surveillance_Video.webm)
+
+The clip contains adapted CC0 **Tiny Cars** sprites by RooMan93 and **Bikes** sprites by Mark Ainsworth (mainsworthy, ref. 210665). The camera scene and sample registrations were created for CampusFlow. Local build tools are Pillow, NumPy and FFmpeg through `imageio-ffmpeg`. [Tiny Cars](https://opengameart.org/content/tiny-cars-0) · [Bikes](https://opengameart.org/content/bikes)
+
+To rebuild and verify the camera assets from the repository root with Node.js and those Python packages available:
+
+```sh
+python simulation/build_gate_clip.py
+FFMPEG="$(python -c 'from imageio_ffmpeg import get_ffmpeg_exe; print(get_ffmpeg_exe())')" node simulation/verify_gate_clip.mjs --write
+```
+
+The real reel builder also uses OpenCV. Download the three credited originals to an external directory and name them `car-entry.mp4`, `bike-aisle.mp4`, and `mixed.mp4`. Pass that directory and the official YOLOX ONNX weights to `python simulation/build_real_gate_reel.py`. Only the privacy-edited output and anonymous evidence belong in the project.
+
 ### Local resource workflows
 
 Open `/resources?section=labs`, `/resources?section=library`, or `/resources?section=equipment` on the local server. Each tab uses its own sample ledger and decision trace. **Reset demo** restores the resources fixture along with the current incident. Set `CAMPUSFLOW_DB` to a writable path to retain the run across restarts.
 
 1. **Labs.** Use the prefilled 24-person Lab 2 request. The timetable shows why that slot is blocked. Approve the first alternative, then try rescheduling or canceling as the simulated lab coordinator.
-2. **Library seats.** Place a hold on Q10 as `DEMO-01`. Choose `DEMO-02`, enable the waitlist and submit the same window. Advance the demo clock by ten minutes, claim the offer and check in.
+2. **Library seats.** Hold Q10 as `DEMO-01`. Choose `DEMO-02`, enable the waitlist and submit for the same window. Release Q10 or advance the demo clock by ten minutes. The agent assigns the seat to `DEMO-02`, who can check in directly. To switch a general booking, request a protected seat as the same requester for the remaining window and approve it as library staff.
 3. **Sports equipment.** Reserve two rackets and confirm pickup. Return one in good condition and report the other damaged. The item ledger shows the second racket under inspection until the sports desk clears it.
 
 Every confirmed effect is rechecked against the latest ledger, written transactionally and verified by SQLite readback. The model, when configured locally, interprets synthetic notes through a read-only tool. You can exercise it from **Interpret a synthetic note** using **Use example**. The form provides the complete workflow offline. Staff roles and sample data simulate campus operations.

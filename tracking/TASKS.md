@@ -30,9 +30,12 @@
 - [ ] Implement and prove variable note intake, typed evidence selection and the shared offline fallback.
 - [x] Plan the local Labs, Library seats and Sports equipment workflows and release checks. [Build plan](../strategy/RESOURCE_ALLOCATION_BUILD_PLAN.md)
 - [x] Add shared local resource state and complete the Labs booking and approval flow.
-- [x] Complete Library seat holds, check-in, release, expiry and waitlist offers.
+- [x] Complete Library seat holds, check-in, release, expiry, automatic waitlist assignment and protected-seat switches.
 - [x] Complete Sports equipment reservations, checkout, partial returns and inspection.
 - [x] Verify all three resource tabs offline and exercise the Gemini adapter with test responses.
+- [x] Build the Parking overview camera exercise, verify all 32 clip crossings offline, and demonstrate live browser inference with synchronized assignment, overflow and departure.
+- [x] Combine real car and motorcycle arrivals and departures in one reel and verify all four parking decisions and synchronized map routes in the browser.
+- [x] Apply the team recording’s parking map style and verify overflow, both exit routes and backward seeking against the footage timeline.
 - [ ] Verify live Gemini intake for the three resource tabs with a team-approved server key.
 - [ ] Rehearse the independent parking and facilities approval and recovery journey from reset.
 - [ ] Run the paired 12-case evaluation and log correctness, operator input, safety and timing.
