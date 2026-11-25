@@ -129,7 +129,7 @@ class CctvStartPayload(BaseModel):
 
 class CctvOverridePayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    mode: Literal["on", "off", "auto"]
+    mode: Literal["toggle", "on", "off", "auto"] = "toggle"
 
 
 def create_app(*, hosted=False, database_url=None, cctv_engine=None):
@@ -273,8 +273,13 @@ def register_cctv_routes(application):
         return application.state.cctv.stop()
 
     @application.post("/api/cctv/override")
-    def cctv_override(body: CctvOverridePayload):
-        return application.state.cctv.set_manual_override(body.mode)
+    def cctv_override(body: Optional[CctvOverridePayload] = None):
+        mode = body.mode if body is not None else "toggle"
+        return application.state.cctv.set_manual_override(mode)
+
+    @application.post("/api/cctv/events/clear")
+    def cctv_clear_events():
+        return application.state.cctv.clear_events()
 
     @application.get("/api/cctv/stream")
     def cctv_stream_endpoint():

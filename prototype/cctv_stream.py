@@ -16,6 +16,17 @@ from urllib.request import Request, urlopen
 
 
 DEFAULT_DROIDCAM_URL = "http://10.110.18.80:4747/video"
+TORCH_TIMEOUT_SECONDS = 1.5
+TORCH_DEVICES: tuple[tuple[str, str], ...] = (
+    ("Sanjana", "http://10.110.21.198:8080"),
+    ("Ani", "http://10.100.36.157:8080"),
+)
+
+
+def _send_torch_http(url: str, timeout: float = TORCH_TIMEOUT_SECONDS) -> None:
+    req = Request(url, headers={"User-Agent": "CampusFlow-Torch/1.0"})
+    with urlopen(req, timeout=timeout) as resp:
+        resp.read(64)
 
 
 @dataclass
@@ -52,25 +63,39 @@ class DebouncedOccupancy:
                 self.empty_since = None
         return self.state
 
-    def devices(self) -> dict[str, str]:
-        if self.state == "OCCUPIED":
+    def devices(self, lights_on: bool = False) -> dict[str, str]:
+        if lights_on:
             return {"Lights": "On", "Fans": "On", "Projector": "On"}
         return {"Lights": "Off", "Fans": "Off", "Projector": "Off"}
 
-    def status_message(self, active: bool, has_frame: bool, manual_override: Optional[str] = None) -> str:
-        if manual_override == "on":
-            return "Manual Override — Lights On, Fans On, Projector On"
-        if manual_override == "off":
-            return "Manual Override — Lights Off, Fans Off, Projector Off"
+    def status_message(
+        self,
+        active: bool,
+        has_frame: bool,
+        manual_override: Optional[str] = None,
+        lights_on: bool = False,
+    ) -> str:
         if not active:
-            return "CCTV inactive — click Initialize CCTV Cam or use Manual Override."
+            if lights_on:
+                return "Override ON — Lights On, Fans On, Projector On (Sanjana & Ani torches ON)"
+            if manual_override == "off":
+                return "Override OFF — Lights Off, Fans Off, Projector Off (Sanjana & Ani torches OFF)"
+            return "CCTV inactive — click Initialize CCTV Cam or use Override to toggle lights."
         if not has_frame:
+            if lights_on:
+                return "Connecting to Phone 1 DroidCam stream… (Lights ON)"
             return "Connecting to Phone 1 DroidCam stream…"
         if self.state == "OCCUPIED":
             rem = self.hold_remaining()
             if self.person_count == 0 and rem > 0:
-                return f"Person left frame — verifying empty ({rem:.1f}s hold) · Appliances On"
-            return "Person detected — Lights On, Fans On, Projector On"
+                if lights_on:
+                    return f"Person left frame — turning lights off in {rem:.1f}s…"
+                return f"Person left frame — verifying empty ({rem:.1f}s hold) · Lights Off"
+            if lights_on:
+                return "Person detected — Lights On, Fans On, Projector On"
+            return "Person detected — Lights Off (no auto turn-on; use Override to turn ON)"
+        if lights_on:
+            return "Override ON — Lights On, Fans On, Projector On (waiting for occupancy)"
         return "Class empty — Lights Off, Fans Off, Projector Off"
 
 
@@ -101,18 +126,34 @@ def _iter_http_mjpeg(url: str, stop_event: threading.Event, timeout: float = 5.0
 
 
 class ClassroomCCTVEngine:
-    """Manages Phone 1 DroidCam capture + YOLOv8n inference + live MJPEG output."""
+    """Manages Phone 1 DroidCam capture + YOLOv8n inference + live MJPEG output + wireless torches."""
 
-    def __init__(self, *, model_name: str = "yolov8n.pt", imgsz: int = 416, conf: float = 0.35):
+    def __init__(
+        self,
+        *,
+        model_name: str = "yolov8n.pt",
+        imgsz: int = 416,
+        conf: float = 0.35,
+        hold_seconds: float = 3.0,
+        clock: Callable[[], float] = time.monotonic,
+        torch_devices: tuple[tuple[str, str], ...] = TORCH_DEVICES,
+        torch_timeout: float = TORCH_TIMEOUT_SECONDS,
+        torch_requester: Optional[Callable[[str, float], Any]] = None,
+    ):
         self.model_name = model_name
         self.imgsz = imgsz
         self.conf = conf
+        self._clock = clock
+        self._torch_devices = tuple(torch_devices)
+        self._torch_timeout = float(torch_timeout)
+        self._torch_requester = torch_requester if torch_requester is not None else _send_torch_http
 
         self._lock = threading.Lock()
         self._frame_cond = threading.Condition(self._lock)
         self._stop_event = threading.Event()
         self._capture_thread: Optional[threading.Thread] = None
         self._infer_thread: Optional[threading.Thread] = None
+        self._last_torch_threads: list[threading.Thread] = []
 
         self._active = False
         self._source = DEFAULT_DROIDCAM_URL
@@ -121,8 +162,9 @@ class ClassroomCCTVEngine:
         self._has_frame = False
         self._fps = 0.0
         self._infer_ms = 0.0
-        self._occupancy = DebouncedOccupancy(hold_seconds=3.0)
-        self._manual_override: Optional[str] = None  # None (auto) | "on" | "off"
+        self._occupancy = DebouncedOccupancy(hold_seconds=hold_seconds, clock=clock)
+        self._lights_on = False  # RAM-only appliance/torch state (never auto-turns ON)
+        self._manual_override: Optional[str] = None  # None | "on" | "off"
 
         self._raw_frame: Any = None
         self._raw_seq = 0
@@ -131,6 +173,35 @@ class ClassroomCCTVEngine:
         self._model: Any = None
         self._events: list[dict[str, str]] = []
         self._logged_initial_frame = False
+
+    def _dispatch_torches(self, *, turn_on: bool) -> list[threading.Thread]:
+        """Fire HTTP torch requests to all configured phones concurrently in background threads."""
+        endpoint = "enabletorch" if turn_on else "disabletorch"
+        requester = self._torch_requester
+        timeout = self._torch_timeout
+        threads: list[threading.Thread] = []
+
+        def _worker(url: str) -> None:
+            try:
+                requester(url, timeout)
+            except Exception:
+                # Fault-tolerant: swallow slow/unreachable phone errors so CCTV & API never block or crash.
+                pass
+
+        for name, base_url in self._torch_devices:
+            url = f"{base_url.rstrip('/')}/{endpoint}"
+            th = threading.Thread(
+                target=_worker,
+                args=(url,),
+                name=f"torch-{name.lower()}-{endpoint}",
+                daemon=True,
+            )
+            th.start()
+            threads.append(th)
+
+        with self._lock:
+            self._last_torch_threads = threads
+        return threads
 
     def _record_event_locked(self, stage: str, title: str, detail: str) -> None:
         self._events.insert(0, {
@@ -141,6 +212,12 @@ class ClassroomCCTVEngine:
         })
         if len(self._events) > 50:
             self._events.pop()
+
+    def clear_events(self) -> dict[str, Any]:
+        """Clear RAM-only classroom incident log entries."""
+        with self._lock:
+            self._events.clear()
+        return self.status()
 
     def _encode_status_jpeg(self, cv2_mod: Any, np_mod: Any, title: str, detail: str) -> bytes:
         canvas = np_mod.zeros((420, 740, 3), dtype=np_mod.uint8)
@@ -185,7 +262,10 @@ class ClassroomCCTVEngine:
             self._has_frame = False
             self._fps = 0.0
             self._infer_ms = 0.0
-            self._occupancy = DebouncedOccupancy(hold_seconds=max(0.5, min(30.0, float(hold_seconds))))
+            self._occupancy = DebouncedOccupancy(
+                hold_seconds=max(0.5, min(30.0, float(hold_seconds))),
+                clock=self._clock,
+            )
             self._logged_initial_frame = False
             self._raw_frame = None
             self._raw_seq = 0
@@ -230,38 +310,119 @@ class ClassroomCCTVEngine:
         self._infer_thread = None
         return self.status()
 
-    def set_manual_override(self, mode: str) -> dict[str, Any]:
-        """Set manual override: 'on' (all On), 'off' (all Off), or 'auto' (follow CCTV)."""
-        if mode not in {"on", "off", "auto"}:
-            raise ValueError("mode must be 'on', 'off', or 'auto'")
+    def set_manual_override(self, mode: str = "toggle") -> dict[str, Any]:
+        """Toggle or explicitly set lights ON/OFF and dispatch concurrent IP Webcam torch requests."""
+        if mode not in {"toggle", "on", "off", "auto"}:
+            raise ValueError("mode must be 'toggle', 'on', 'off', or 'auto'")
+
+        dispatch_turn_on: Optional[bool] = None
         with self._lock:
-            self._manual_override = None if mode == "auto" else mode
-            if mode == "on":
-                self._record_event_locked(
-                    "Override",
-                    "Manual override — All ON",
-                    "Lights On, Fans On, Projector On (manual control active).",
-                )
+            if mode == "toggle":
+                target_on = not self._lights_on
+                self._lights_on = target_on
+                self._manual_override = "on" if target_on else "off"
+                dispatch_turn_on = target_on
+            elif mode == "on":
+                self._lights_on = True
+                self._manual_override = "on"
+                dispatch_turn_on = True
             elif mode == "off":
-                self._record_event_locked(
-                    "Override",
-                    "Manual override — All OFF",
-                    "Lights Off, Fans Off, Projector Off (manual control active).",
-                )
-            else:
+                self._lights_on = False
+                self._manual_override = "off"
+                dispatch_turn_on = False
+            else:  # "auto"
+                self._manual_override = None
+                if self._lights_on and self._occupancy.state == "EMPTY":
+                    self._lights_on = False
+                    dispatch_turn_on = False
                 self._record_event_locked(
                     "Auto",
-                    "Manual override released",
-                    "Returned appliance control to live CCTV person detection.",
+                    "Auto-OFF monitoring active",
+                    "Lights stay off until Override; auto-OFF fires when classroom empties.",
                 )
+
+            if dispatch_turn_on is True:
+                self._record_event_locked(
+                    "Override",
+                    "Override — Lights ON",
+                    "Dispatched /enabletorch concurrently to Sanjana & Ani.",
+                )
+            elif dispatch_turn_on is False and mode != "auto":
+                self._record_event_locked(
+                    "Override",
+                    "Override — Lights OFF",
+                    "Dispatched /disabletorch concurrently to Sanjana & Ani.",
+                )
+
+        if dispatch_turn_on is not None:
+            self._dispatch_torches(turn_on=dispatch_turn_on)
         return self.status()
 
     def _effective_devices_locked(self) -> dict[str, str]:
-        if self._manual_override == "on":
-            return {"Lights": "On", "Fans": "On", "Projector": "On"}
-        if self._manual_override == "off":
-            return {"Lights": "Off", "Fans": "Off", "Projector": "Off"}
-        return self._occupancy.devices()
+        return self._occupancy.devices(lights_on=self._lights_on)
+
+    def process_detection(
+        self,
+        person_count: int,
+        confidence: float = 0.0,
+        *,
+        infer_ms: Optional[float] = None,
+        fps_now: Optional[float] = None,
+    ) -> tuple[str, float, bool]:
+        """Apply a YOLOv8 person detection result in RAM and trigger Auto-OFF if student left.
+
+        - Never auto-turns lights ON when a student appears while lights are OFF.
+        - When lights are ON and a student was on screen and then leaves (count == 0
+          past the hold timer), flips lights OFF and dispatches /disabletorch to both phones.
+        """
+        should_auto_off = False
+        with self._lock:
+            prev_state = self._occupancy.state
+            first_frame = not self._logged_initial_frame
+            new_state = self._occupancy.update(person_count, confidence)
+            self._has_frame = True
+            self._logged_initial_frame = True
+            if infer_ms is not None:
+                self._infer_ms = round(infer_ms, 1)
+            if fps_now is not None:
+                self._fps = round(fps_now, 1)
+
+            rem = self._occupancy.hold_remaining()
+            if prev_state == "OCCUPIED" and new_state == "EMPTY" and self._lights_on:
+                self._lights_on = False
+                self._manual_override = None
+                should_auto_off = True
+                self._record_event_locked(
+                    "Auto-Off",
+                    "Class empty — Lights Off, Fans Off, Projector Off",
+                    f"Student left for {self._occupancy.hold_seconds:.1f}s; sent /disabletorch to Sanjana & Ani.",
+                )
+            elif first_frame or new_state != prev_state:
+                if new_state == "OCCUPIED":
+                    if self._lights_on:
+                        self._record_event_locked(
+                            "Occupied",
+                            "Person detected — Lights remain On",
+                            f"{person_count} {'person' if person_count == 1 else 'people'} detected in C-101.",
+                        )
+                    else:
+                        self._record_event_locked(
+                            "Occupied",
+                            "Person detected — Lights remain Off",
+                            f"{person_count} {'person' if person_count == 1 else 'people'} detected in C-101 (no auto turn-on).",
+                        )
+                else:
+                    self._record_event_locked(
+                        "Empty",
+                        "Class empty — Lights Off, Fans Off, Projector Off",
+                        f"No person detected for {self._occupancy.hold_seconds:.1f}s.",
+                    )
+            lights_snap = self._lights_on
+
+        if should_auto_off:
+            self._dispatch_torches(turn_on=False)
+
+        return new_state, rem, lights_snap
 
     def _publish_raw(self, frame: Any, backend: str) -> None:
         with self._lock:
@@ -382,39 +543,24 @@ class ClassroomCCTVEngine:
                 fps_frames = 0
                 fps_t0 = time.perf_counter()
 
-            with self._lock:
-                prev_state = self._occupancy.state
-                first_frame = not self._logged_initial_frame
-                self._occupancy.update(count, max_conf)
-                self._has_frame = True
-                self._logged_initial_frame = True
-                self._infer_ms = round(infer_ms, 1)
-                if fps_now is not None:
-                    self._fps = round(fps_now, 1)
-                state_snap = self._occupancy.state
-                rem = self._occupancy.hold_remaining()
-                if first_frame or state_snap != prev_state:
-                    if state_snap == "OCCUPIED":
-                        self._record_event_locked(
-                            "Occupied",
-                            "Person detected — Lights On, Fans On, Projector On",
-                            f"{count} {'person' if count == 1 else 'people'} detected in C-101.",
-                        )
-                    else:
-                        self._record_event_locked(
-                            "Empty",
-                            "Class empty — Lights Off, Fans Off, Projector Off",
-                            f"No person detected for {self._occupancy.hold_seconds:.1f}s.",
-                        )
+            state_snap, rem, lights_snap = self.process_detection(
+                count,
+                max_conf,
+                infer_ms=infer_ms,
+                fps_now=fps_now,
+            )
 
             # Draw YOLOv8 person bounding boxes + compact live overlay directly onto streamed frame
             annotated = results[0].plot()
-            badge_bg = (34, 150, 72) if state_snap == "OCCUPIED" else (52, 62, 78)
-            badge_txt = f"OCCUPIED ({count})" if state_snap == "OCCUPIED" else "CLASS EMPTY"
-            if state_snap == "OCCUPIED" and count == 0 and rem > 0:
-                badge_txt = f"EMPTY CHECK {rem:.1f}s"
-            cv2_mod.rectangle(annotated, (10, 10), (240, 44), badge_bg, -1)
-            cv2_mod.putText(annotated, badge_txt, (20, 33), cv2_mod.FONT_HERSHEY_SIMPLEX, 0.62, (255, 255, 255), 2)
+            badge_bg = (34, 150, 72) if lights_snap else (52, 62, 78)
+            if state_snap == "OCCUPIED" and count == 0 and rem > 0 and lights_snap:
+                badge_txt = f"AUTO-OFF {rem:.1f}s"
+            elif state_snap == "OCCUPIED":
+                badge_txt = f"OCCUPIED ({count}) {'ON' if lights_snap else 'OFF'}"
+            else:
+                badge_txt = "EMPTY (ON)" if lights_snap else "CLASS EMPTY"
+            cv2_mod.rectangle(annotated, (10, 10), (265, 44), badge_bg, -1)
+            cv2_mod.putText(annotated, badge_txt, (20, 33), cv2_mod.FONT_HERSHEY_SIMPLEX, 0.58, (255, 255, 255), 2)
 
             ok, enc = cv2_mod.imencode(".jpg", annotated, [int(cv2_mod.IMWRITE_JPEG_QUALITY), 80])
             del frame, results, annotated  # RAM-only: discard immediately
@@ -446,6 +592,7 @@ class ClassroomCCTVEngine:
                 "source": self._source,
                 "backend": self._backend,
                 "state": self._occupancy.state,
+                "lights_on": self._lights_on,
                 "manual_override": self._manual_override,
                 "person_count": self._occupancy.person_count,
                 "confidence": self._occupancy.confidence,
@@ -454,7 +601,13 @@ class ClassroomCCTVEngine:
                 "fps": self._fps,
                 "infer_ms": self._infer_ms,
                 "devices": self._effective_devices_locked(),
-                "status_message": self._occupancy.status_message(self._active, self._has_frame, self._manual_override),
+                "torch_devices": [{"name": name, "url": url} for name, url in self._torch_devices],
+                "status_message": self._occupancy.status_message(
+                    self._active,
+                    self._has_frame,
+                    self._manual_override,
+                    lights_on=self._lights_on,
+                ),
                 "error": self._error,
                 "events": list(self._events),
             }

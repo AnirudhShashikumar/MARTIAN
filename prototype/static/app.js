@@ -27,6 +27,7 @@ let cctv = {
   source: "http://10.110.18.80:4747/video",
   backend: "idle",
   state: "EMPTY",
+  lights_on: false,
   manual_override: null,
   person_count: 0,
   confidence: 0,
@@ -34,13 +35,14 @@ let cctv = {
   fps: 0,
   infer_ms: 0,
   devices: { Lights: "Off", Fans: "Off", Projector: "Off" },
-  status_message: "CCTV inactive — click Initialize CCTV Cam or use Manual Override.",
+  status_message: "CCTV inactive — click Initialize CCTV Cam or use Override to toggle lights.",
   error: null,
   events: [],
 };
 let cctvBusy = false;
 let cctvPollTimer = null;
 let cctvStreamToken = 0;
+let clearedScenarioLogCount = 0;
 
 function escape(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -110,19 +112,17 @@ function renderIncident() {
 }
 
 function cctvBannerClass() {
-  if (cctv.manual_override === "on") return "occupied";
-  if (cctv.manual_override === "off") return "empty";
+  if (cctv.lights_on) return "occupied";
   if (!cctv.active) return "idle";
   if (!cctv.has_frame) return "connecting";
-  return cctv.state === "OCCUPIED" ? "occupied" : "empty";
+  return "empty";
 }
 
 function cctvBannerMeta() {
-  if (cctv.manual_override) return "Manual Override active — click Return to Auto to follow live CCTV again";
-  if (!cctv.active) return "Phone 1 DroidCam stream + YOLOv8n person detection (RAM-only, no video saved)";
+  if (!cctv.active) return "Phone 1 DroidCam + YOLOv8n · Wireless torches: Sanjana (10.110.21.198) & Ani (10.100.36.157)";
   if (cctv.error) return `Stream notice: ${cctv.error}`;
   if (!cctv.has_frame) return `Connecting to ${cctv.source}…`;
-  return `${cctv.person_count} ${cctv.person_count === 1 ? "person" : "people"} in frame · YOLOv8n ${cctv.infer_ms} ms · ${cctv.fps} FPS`;
+  return `${cctv.person_count} ${cctv.person_count === 1 ? "person" : "people"} in frame · Lights ${cctv.lights_on ? "ON" : "OFF"} · YOLOv8n ${cctv.infer_ms} ms · ${cctv.fps} FPS`;
 }
 
 function isClassroomView() {
@@ -130,8 +130,10 @@ function isClassroomView() {
 }
 
 function classroomAllOn() {
-  const devs = state?.local_resource_workflows ? cctv.devices : (state?.room?.devices || {});
-  return Object.values(devs).some((val) => val === "On");
+  if (state?.local_resource_workflows) {
+    return Boolean(cctv.lights_on || Object.values(cctv.devices || {}).some((val) => val === "On"));
+  }
+  return Object.values(state?.room?.devices || {}).some((val) => val === "On");
 }
 
 function syncCctvDom() {
@@ -146,13 +148,13 @@ function syncCctvDom() {
 
   const headBadge = $("#classroom-head-badge");
   if (headBadge) {
-    let text = "Idle";
-    let cls = "idle";
-    if (cctv.manual_override === "on") { text = "Override · All On"; cls = "verified"; }
-    else if (cctv.manual_override === "off") { text = "Override · All Off"; cls = "held"; }
-    else if (cctv.active) {
-      text = cctv.state === "OCCUPIED" ? "Live · Occupied" : "Live · Empty";
-      cls = cctv.state === "OCCUPIED" ? "verified" : "idle";
+    const isOn = classroomAllOn();
+    let text = isOn ? "Override · ON" : "Idle · OFF";
+    let cls = isOn ? "verified" : "idle";
+    if (cctv.active) {
+      const occ = cctv.state === "OCCUPIED" ? "Occupied" : "Empty";
+      text = `Live · ${occ} · ${isOn ? "ON" : "OFF"}`;
+      cls = isOn ? "verified" : "idle";
     }
     headBadge.className = `badge ${cls}`;
     headBadge.textContent = text;
@@ -164,13 +166,14 @@ function syncCctvDom() {
     ovSwitch.setAttribute("aria-checked", String(isOn));
     ovSwitch.classList.toggle("on", isOn);
     const label = ovSwitch.querySelector(".switch-state");
-    if (label) label.textContent = isOn ? "ALL ON" : "ALL OFF";
+    if (label) label.textContent = isOn ? "ON" : "OFF";
   }
 
   if (state?.local_resource_workflows) {
-    const subLabel = cctv.manual_override
-      ? "Manual override"
-      : (cctv.active ? "Live CCTV auto" : "Ready");
+    const isOn = classroomAllOn();
+    const subLabel = isOn
+      ? (cctv.active ? "On · Auto-OFF armed" : "Override ON")
+      : (cctv.active ? "Off · No auto turn-on" : "Off");
     Object.entries(cctv.devices).forEach(([name, val]) => {
       const card = document.querySelector(`[data-device-card="${name}"]`);
       if (!card) return;
@@ -221,25 +224,35 @@ async function handleCctvAction(mode) {
   const input = $("#cctv-source");
   if (input && input.value.trim()) cctv.source = input.value.trim();
 
-  // Manual Override toggle updates in-place so the live MJPEG <img> never flickers/reloads
-  if (mode === "toggle_override" || mode === "override_auto") {
-    const nextMode = mode === "override_auto" ? "auto" : (classroomAllOn() ? "off" : "on");
+  // Clear Incident Log in-place without disturbing the live MJPEG feed
+  if (mode === "clear_log") {
+    try {
+      cctv = await api("/api/cctv/events/clear", { method: "POST" });
+      clearedScenarioLogCount = state?.audit?.length || 0;
+      if (isClassroomView()) $("#activity").innerHTML = activityPanel();
+      $("#announcements").textContent = "Incident log cleared.";
+    } catch (error) {
+      notify(error.message || "Could not clear incident log.");
+    }
+    return;
+  }
+
+  // Dual-action Override toggle updates in-place so the live MJPEG <img> never flickers/reloads
+  if (mode === "toggle_override") {
     try {
       cctv = await api("/api/cctv/override", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: nextMode }),
+        body: JSON.stringify({ mode: "toggle" }),
       });
       if (cctv.active) {
         syncCctvDom();
-        const autoBtn = $("#manual-override-auto");
-        if (autoBtn) autoBtn.hidden = !cctv.manual_override;
       } else {
         render();
       }
       $("#announcements").textContent = cctv.status_message;
     } catch (error) {
-      notify(error.message || "Could not update manual override.");
+      notify(error.message || "Could not toggle Override.");
     }
     return;
   }
@@ -277,9 +290,10 @@ function roomsPanel() {
   const liveCctv = Boolean(localMode && cctv.active);
 
   const activeDevices = localMode ? cctv.devices : room.devices;
-  const subLabel = cctv.manual_override
-    ? "Manual override"
-    : (liveCctv ? "Live CCTV auto" : "Ready");
+  const isOn = classroomAllOn();
+  const subLabel = isOn
+    ? (liveCctv ? "On · Auto-OFF armed" : "Override ON")
+    : (liveCctv ? "Off · No auto turn-on" : "Off");
 
   const devices = Object.entries(activeDevices).map(([name, status]) =>
     `<div class="device ${status === "On" ? "is-on" : "is-off confirmed"}" data-device-card="${escape(name)}"><span>${escape(name)}</span>
@@ -287,7 +301,6 @@ function roomsPanel() {
        <small>${localMode ? subLabel : "Classroom appliance"}</small></div>`
   ).join("");
 
-  const isOn = classroomAllOn();
   const cctvControls = localMode ? `
     <div class="cctv-bar">
       <label class="cctv-field">
@@ -301,17 +314,11 @@ function roomsPanel() {
       </div>
     </div>
     <div class="override-bar">
-      <div class="override-copy">
-        <strong>Manual Override · Master Power</strong>
-        <span>Turn Lights, Fans &amp; Projector all On or Off at once</span>
-      </div>
-      <div class="override-controls">
-        <button id="manual-override-auto" type="button" class="button ghost btn-auto" data-cctv="override_auto" ${cctv.manual_override ? "" : "hidden"}>Return to Auto</button>
-        <button id="manual-override-switch" type="button" role="switch" aria-checked="${isOn}" class="master-switch ${isOn ? "on" : ""}" data-cctv="toggle_override">
-          <span class="switch-track"><span class="switch-thumb"></span></span>
-          <span class="switch-state">${isOn ? "ALL ON" : "ALL OFF"}</span>
-        </button>
-      </div>
+      <strong>Override switch</strong>
+      <button id="manual-override-switch" type="button" role="switch" aria-checked="${isOn}" class="master-switch ${isOn ? "on" : ""}" data-cctv="toggle_override">
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-state">${isOn ? "ON" : "OFF"}</span>
+      </button>
     </div>` : "";
 
   const liveStreamBlock = liveCctv ? `
@@ -324,28 +331,23 @@ function roomsPanel() {
         <strong id="cctv-msg">${escape(cctv.status_message)}</strong>
         <span id="cctv-meta">${escape(cctvBannerMeta())}</span>
       </div>
-    </div>` : (localMode && cctv.manual_override ? `
-    <div id="cctv-banner" class="cctv-banner ${cctvBannerClass()}" role="status" aria-live="polite" style="margin-bottom:14px;">
-      <strong id="cctv-msg">${escape(cctv.status_message)}</strong>
-      <span id="cctv-meta">${escape(cctvBannerMeta())}</span>
-    </div>` : "");
+    </div>` : "";
 
   let headBadgeHtml = badge(stages[roomStatus], roomStatus);
   if (localMode) {
-    let bText = "Idle";
-    let bCls = "idle";
-    if (cctv.manual_override === "on") { bText = "Override · All On"; bCls = "verified"; }
-    else if (cctv.manual_override === "off") { bText = "Override · All Off"; bCls = "held"; }
-    else if (liveCctv) {
-      bText = cctv.state === "OCCUPIED" ? "Live · Occupied" : "Live · Empty";
-      bCls = cctv.state === "OCCUPIED" ? "verified" : "idle";
+    let bText = isOn ? "Override · ON" : "Idle · OFF";
+    let bCls = isOn ? "verified" : "idle";
+    if (liveCctv) {
+      const occ = cctv.state === "OCCUPIED" ? "Occupied" : "Empty";
+      bText = `Live · ${occ} · ${isOn ? "ON" : "OFF"}`;
+      bCls = isOn ? "verified" : "idle";
     }
     headBadgeHtml = `<span id="classroom-head-badge" class="badge ${bCls}">${escape(bText)}</span>`;
   }
 
   return `<section class="panel">
     <div class="panel-head"><div><h2>Classroom C-101</h2>
-       <p>${liveCctv ? "Live DroidCam CCTV · Person detected turns all On · Empty turns all Off" : "Initialize CCTV Cam for auto-detection or flip Manual Override"}</p></div>
+       <p>${liveCctv ? "Live DroidCam CCTV · Override toggles Sanjana & Ani lights · Auto-OFF when empty" : "Use Override to toggle Sanjana & Ani lights or Initialize CCTV Cam for Auto-OFF"}</p></div>
        ${headBadgeHtml}</div>
     ${cctvControls}
     ${liveStreamBlock}
@@ -488,7 +490,8 @@ function activityPanel() {
       title: ev.title,
       detail: ev.detail,
     }));
-    const scenarioEvents = [...state.audit].reverse().map((log) => ({
+    const visibleScenarioAudit = state.audit.slice(clearedScenarioLogCount);
+    const scenarioEvents = [...visibleScenarioAudit].reverse().map((log) => ({
       time: clock(log.time),
       stage: log.stage,
       title: log.title,
@@ -501,8 +504,14 @@ function activityPanel() {
       ${log.detail ? `<p>${escape(log.detail)}</p>` : ""}
     </li>`).join("");
     return `<section class="panel activity incident-log-panel">
-      <div class="panel-head"><div><h2>Incident log</h2><p>Every classroom change recorded</p></div>${badge(`${allLogs.length}`, allLogs.length ? "verified" : "idle")}</div>
-      ${rows ? `<ol class="incident-log-list">${rows}</ol>` : '<p class="empty">No classroom changes yet. Click Initialize CCTV Cam to start logging live events.</p>'}
+      <div class="panel-head">
+        <div><h2>Incident log</h2><p>Every classroom change recorded</p></div>
+        <div class="incident-log-actions">
+          ${badge(`${allLogs.length}`, allLogs.length ? "verified" : "idle")}
+          <button type="button" class="button ghost btn-clear-log" data-cctv="clear_log" ${allLogs.length ? "" : "disabled"}>Clear</button>
+        </div>
+      </div>
+      ${rows ? `<ol class="incident-log-list">${rows}</ol>` : '<p class="empty">No classroom changes yet.</p>'}
     </section>`;
   }
 
