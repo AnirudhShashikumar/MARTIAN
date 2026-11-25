@@ -132,7 +132,12 @@ def create_app():
     application.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
     @application.get("/")
-    def index():
+    def landing():
+        return FileResponse(ROOT / "static" / "landing.html")
+
+    @application.get("/fleet")
+    @application.get("/resources")
+    def dashboard():
         return FileResponse(ROOT / "static" / "index.html")
 
     @application.get("/api/state")

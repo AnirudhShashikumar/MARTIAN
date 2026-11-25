@@ -10,3 +10,5 @@
 | High | An occupancy-only pitch can obscure CampusFlow's two-branch response. Local impact remains unmeasured. | Keep the parking result visible while facilities approval is invalidated. Report counts on synthetic data. |
 | Medium | Day 2 close differs across sources. | Confirm 9:30 AM wrap-up versus 10:30 AM event end and exit arrangements with organizers. |
 | High | A note can match multiple allowed timetable records or become stale during model inference. | Corroborate the match or ask for clarification. Revalidate the run and note before accepting a model result. Keep the branch version check inside the write transaction. |
+| Medium | The fleet map can be mistaken for a live occupancy feed. | Label it as a campus layout reference and keep all bay counts tied to the synthetic incident fixture. |
+| Medium | An earlier Uvicorn process may still serve the Alpha route at port 8765. | Start a fresh process before rehearsal. Use a free port if preserving the earlier demo session. |

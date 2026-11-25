@@ -42,6 +42,25 @@ class ScenarioTest(TestCase):
     def bay(self, target):
         return next(item for item in self.state["bays"] if item["id"] == target)
 
+    def test_landing_dashboard_routes_and_local_assets(self):
+        pages = {
+            "/": ('href="/fleet"', 'href="/resources"', 'id="home-title"'),
+            "/fleet": ('id="subtabs"', 'id="operation"', 'id="audit-dialog"'),
+            "/resources": ('id="subtabs"', 'id="operation"', 'id="audit-dialog"'),
+        }
+        for path, markers in pages.items():
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
+                for marker in markers:
+                    self.assertIn(marker, response.text)
+
+        for name in ("campus-parking-map.webp", "resource-library.webp", "campusflow-icon.png"):
+            with self.subTest(asset=name):
+                response = self.client.get(f"/static/{name}")
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.headers["content-type"].startswith("image/"))
+
     def test_primary_recovery_and_reset(self):
         self.start()
         self.assertEqual(self.bay("B-03")["vehicle"], "BIKE-014")

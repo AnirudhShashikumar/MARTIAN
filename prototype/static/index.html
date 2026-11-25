@@ -4,55 +4,56 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#f5f5f7">
-  <title>CampusFlow · Campus operations</title>
+  <meta name="theme-color" content="#f7f7f2">
+  <title>CampusFlow · Dashboard</title>
+  <link rel="icon" href="/static/campusflow-icon.png" type="image/png">
   <link rel="stylesheet" href="/static/styles.css">
   <script src="/static/app.js" defer></script>
 </head>
-<body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <div class="identity">
-        <span class="college-crest" aria-hidden="true">
-          <img src="/static/bmsitm-lockup.png" width="2060" height="468" alt="">
-        </span>
-        <div class="brand">
-          <span class="brand-name">CampusFlow</span>
-          <span class="college-name">BMS Institute of Technology &amp; Management</span>
-        </div>
-      </div>
-      <div class="top-actions">
-        <span class="source">Synthetic environment</span>
-        <button type="button" class="button ghost" data-action="audit">Incident audit</button>
-        <button type="button" class="button ghost reset" data-action="reset">Reset demo</button>
-      </div>
+<body class="dashboard-page">
+  <a class="skip-link" href="#main">Skip to dashboard</a>
+  <header class="masthead">
+    <div class="shell masthead-inner">
+      <a class="identity" href="/" aria-label="CampusFlow home">
+        <img class="brand-mark" src="/static/campusflow-icon.png" width="34" height="34" alt="">
+        <span class="brand">CampusFlow</span>
+      </a>
+      <nav class="workspaces-nav" aria-label="Workspaces">
+        <a href="/">Home</a>
+        <a href="/fleet">Vehicle Fleet</a>
+        <a href="/resources">College Resources</a>
+      </nav>
+      <span class="environment">Simulation mode</span>
     </div>
   </header>
-  <main class="workspace">
-    <section id="incident" aria-label="Shared incident" class="incident"></section>
+
+  <main id="main" class="shell dashboard">
+    <header class="dashboard-heading">
+      <div><p class="eyebrow" id="dashboard-area"></p><h1 id="dashboard-title">Campus operations</h1><p id="dashboard-description"></p></div>
+      <div class="header-actions">
+        <button type="button" class="button ghost reset" data-action="reset" disabled>Reset demo</button>
+        <button type="button" class="button secondary" data-action="audit" disabled>Incident audit</button>
+      </div>
+    </header>
     <div id="announcements" class="screen-reader" role="status" aria-live="polite"></div>
     <div id="error" class="error" role="alert" hidden></div>
-    <noscript><p class="error">CampusFlow requires JavaScript for the local demo.</p></noscript>
-    <nav class="tabs" aria-label="Operations views">
-      <button type="button" data-view="fleet" aria-current="page">Vehicle Fleet Management</button>
-      <button type="button" data-view="resources">College Resource Allocation</button>
-    </nav>
-    <div class="workspace-grid">
-      <div class="operation">
-        <nav id="subtabs" class="subtabs" aria-label="Vehicle fleet views"></nav>
-        <section id="operation" aria-label="Operational state"><p>Loading scenario…</p></section>
-      </div>
-      <aside id="console" class="console" aria-label="Demo controls and activity"></aside>
+    <noscript><p class="error">Enable JavaScript to use the CampusFlow dashboard.</p></noscript>
+
+    <nav id="subtabs" class="subtabs" aria-label="Dashboard sections"></nav>
+    <div class="dashboard-grid">
+      <section id="operation" aria-label="Operational state"><p class="panel">Loading dashboard…</p></section>
+      <aside class="side-rail" aria-label="Shared incident and demo controls">
+        <div id="console"></div>
+        <section id="incident" class="incident panel" aria-label="Shared incident" hidden></section>
+        <div id="activity"></div>
+      </aside>
     </div>
-    <footer><span>MARTIAN 1.0 · Checkpoint Alpha</span><span>Local simulator · sample records and mock device states</span></footer>
+    <footer class="site-footer"><span>MARTIAN 1.0 · Checkpoint Beta</span><span>Sample records and mock device states</span></footer>
   </main>
   <dialog id="audit-dialog" aria-labelledby="audit-title">
     <div class="dialog-top">
-      <div>
-        <p class="eyebrow">Shared incident</p>
-        <h2 id="audit-title">Decision audit</h2>
-      </div>
-      <form method="dialog"><button class="button muted">Close audit</button></form>
+      <div><p class="eyebrow">Shared incident</p><h2 id="audit-title">Decision audit</h2></div>
+      <form method="dialog"><button class="button secondary">Close audit</button></form>
     </div>
     <div id="audit-body"></div>
   </dialog>

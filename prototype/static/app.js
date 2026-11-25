@@ -7,13 +7,21 @@ const stages = {
   held: "Safety hold", rejected: "Staff review",
 };
 let state;
-let view = "fleet";
 let busy = false;
-const sections = {
-  fleet: [["parking", "Parking overview"], ["gate", "Gate ledger"], ["overflow", "Overflow approvals"]],
-  resources: [["rooms", "Rooms & devices"], ["labs", "Labs"], ["library", "Library seats"], ["equipment", "Sports equipment"]],
-};
-const selected = { fleet: "parking", resources: "rooms" };
+const view = window.location.pathname === "/resources" ? "resources" : "fleet";
+const workspace = {
+  fleet: {
+    title: "Vehicle Fleet Management", path: "/fleet", area: "Campus mobility",
+    description: "Track gate activity, parking capacity, and overflow at Gate A.",
+    sections: [["parking", "Parking overview"], ["map", "Campus map"], ["gate", "Gate ledger"], ["overflow", "Overflow approvals"]],
+  },
+  resources: {
+    title: "College Resource Allocation", path: "/resources", area: "Campus facilities",
+    description: "Manage classrooms, labs, library seats, and shared equipment.",
+    sections: [["rooms", "Rooms & devices"], ["labs", "Labs"], ["library", "Library seats"], ["equipment", "Sports equipment"]],
+  },
+}[view];
+let section = workspace.sections[0][0];
 
 function escape(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -36,10 +44,6 @@ function action(name, label, tone = "secondary", extra = "") {
   return `<button type="button" class="button ${tone}" data-action="${name}" ${extra}${busy ? " disabled" : ""}>${label}</button>`;
 }
 
-function linkView(target, label) {
-  return `<button type="button" class="button primary" data-view="${target}">${label}</button>`;
-}
-
 function branchDescription(branch) {
   const result = state.branches[branch];
   if (branch === "parking" && result.status === "verified") {
@@ -55,19 +59,20 @@ function branchDescription(branch) {
 
 function renderIncident() {
   const id = state.phase === "baseline" ? "" : `<span class="incident-id">CF-${escape(state.id.slice(0, 6).toUpperCase())}</span>`;
-  let title = "Campus operations";
-  let description = "Gate A and classroom C-101 are operating on the current timetable.";
-  let context = `<span>Scenario clock ${clock(state.clock)}</span><span>Original timetable · 14:00–14:45</span>`;
+  let title = "No active incident";
+  let description = "Gate A and C-101 are following the current timetable.";
+  let context = `Scenario clock · ${clock(state.clock, false)}`;
 
   if (state.phase === "detected" || state.phase === "clarification") {
     title = "Late schedule change";
     description = `&ldquo;${escape(state.note)}&rdquo;`;
-    context = "<span>Staff note received</span><span>Two new arrivals</span>";
+    context = "Staff note received · Gate A arrivals";
   }
   if (state.session) {
-    title = "Lab induction moved to Lab 2";
-    description = `<strong>14:20–15:05 in Lab 2.</strong> The revised timetable changes arrivals at Gate A and frees classroom C-101.`;
-    context = `<span>Timetable ${escape(state.session.revision)}</span><span>Scenario clock ${clock(state.clock)}</span>`;
+    const session = state.session;
+    title = `${session.name} moved to ${session.room}`;
+    description = `<strong>${escape(session.start)}–${escape(session.end)} in ${escape(session.room)}.</strong> The revised timetable changes arrivals at Gate A and frees ${escape(session.previous_room)}.`;
+    context = `Timetable ${escape(session.revision)} · ${clock(state.clock, false)}`;
   }
 
   const summary = [["parking", "Vehicle fleet"], ["room", "College resources"]].map(([key, label]) => {
@@ -77,10 +82,12 @@ function renderIncident() {
        ${badge(statusLabel, status)}</div>`;
   }).join("");
 
-  $("#incident").innerHTML = `<div class="incident-left">
-      <p class="eyebrow">${state.phase === "baseline" ? "Operations overview" : "Shared incident"}${id}</p>
-      <h1>${title}</h1><p class="incident-desc">${description}</p>
-      <div class="context-line">${context}</div></div><div class="branch-summary">${summary}</div>`;
+  const incident = $("#incident");
+  incident.innerHTML = `
+    <p class="eyebrow">Shared incident${id}</p>
+    <h2>${escape(title)}</h2><p class="incident-desc">${description}</p>
+    <p class="incident-context">${context}</p><div class="branch-summary">${summary}</div>`;
+  incident.hidden = false;
 }
 
 function capacity(kind) {
@@ -90,7 +97,8 @@ function capacity(kind) {
   const spots = bays.map((bay) =>
     `<span class="spot ${bay.policy !== "General" ? "safe" : bay.vehicle ? "taken" : ""}" title="${escape(bay.id + " · " + (bay.vehicle || bay.policy))}"></span>`
   ).join("");
-  const note = kind === "Car" ? "2 protected bays" : "General bike bays";
+  const protectedCount = bays.length - general.length;
+  const note = protectedCount ? `${protectedCount} protected bays` : "General bike bays";
   return `<div class="capacity"><h3>${kind === "Car" ? "Car parking" : "Bike parking"}</h3>
     <strong class="data">${available} / ${general.length} free</strong><p class="capacity-note">${note}</p>
     <div class="spots" aria-hidden="true">${spots}</div></div>`;
@@ -101,22 +109,59 @@ function parkingOverview() {
   const overflow = state.bays.find((bay) => bay.policy === "Overflow");
   const windowLabel = state.session ? state.session.arrival_window : "Opens by approval";
   const closed = state.session && state.clock >= state.session.overflow_closes_at;
-  let overflowState = overflow.vehicle ? "Assigned" : "Available";
+  let overflowState = overflow.vehicle ? "Assigned" : "Standby";
   if (closed) overflowState = overflow.vehicle ? "Closed · occupied" : "Window closed";
   else if (proposal.status === "pending") overflowState = "Approval needed";
   const arrivalsWaiting = state.gate.filter((event) => event.status === "Waiting").length;
+  const carBays = state.bays.filter((bay) => bay.kind === "Car" && bay.policy === "General");
+  const occupied = carBays.filter((bay) => bay.vehicle).length;
+  const percent = carBays.length ? Math.round(occupied / carBays.length * 100) : 0;
 
   return `<section class="panel">
-    <div class="panel-head"><div><h2>Parking capacity</h2><p>Gate A · eligibility checked by vehicle class</p></div>
+    <div class="panel-head"><div><h2>Parking capacity</h2><p>Gate A · simulated bay availability</p></div>
       ${badge(arrivalsWaiting ? `${arrivalsWaiting} waiting` : "Gate clear", arrivalsWaiting ? "pending" : "clear")}</div>
-    <div class="capacity-grid">
-      ${capacity("Car")}${capacity("Bike")}
-      <div class="capacity ${overflow.vehicle ? "checked" : proposal.status === "pending" ? "callout" : ""}">
-        <h3>Overflow · OV-01</h3><strong class="data">${overflowState}</strong><p class="capacity-note">${escape(windowLabel)}</p>
+    <div class="overview-layout">
+      <button type="button" class="overview-media map-preview" data-section="map">
+        <img src="/static/campus-parking-map.webp" width="1264" height="848" alt="">
+        <span>View campus map</span>
+      </button>
+      <div class="meter-stage">
+        <div class="capacity-meter" style="--fill: ${percent}%">
+          <div><strong>${percent}%</strong><span>Car bays occupied</span></div>
+        </div>
+        <p>${occupied} of ${carBays.length} general car bays in use</p>
+      </div>
+      <div class="capacity-grid">
+        ${capacity("Car")}${capacity("Bike")}
+        <div class="capacity ${overflow.vehicle ? "checked" : proposal.status === "pending" ? "callout" : ""}">
+          <h3>Overflow · ${escape(overflow.id)}</h3><strong class="data">${overflowState}</strong><p class="capacity-note">${escape(windowLabel)}</p>
+        </div>
       </div>
     </div>
   </section>
   ${gateLedger(false)}`;
+}
+
+function campusMap() {
+  return `<section class="panel">
+    <div class="panel-head"><div><h2>Campus parking map</h2><p>BMSITM · Gate A approach and parking zones</p></div>
+    ${badge("Layout reference")}</div>
+    <figure class="campus-map">
+      <img src="/static/campus-parking-map.webp" width="1264" height="848"
+        alt="Plan of Gate A at the bottom, with the main bike lot to the left, car parking to the right, and the secondary bike zone along the right perimeter.">
+      <span class="map-pin bikes" aria-hidden="true">Bike lot</span>
+      <span class="map-pin cars" aria-hidden="true">Car lot</span>
+      <span class="map-pin bike-zone" aria-hidden="true">Bike zone 2</span>
+      <span class="map-pin gate" aria-hidden="true">Gate A</span>
+    </figure>
+    <div class="map-directions">
+      <div><strong>Gate A</strong><span>Main entry and exit</span></div>
+      <div><strong>Bike lot</strong><span>Left of the main approach</span></div>
+      <div><strong>Car lot</strong><span>Right of the main approach</span></div>
+      <div><strong>Bike zone 2</strong><span>Along the right perimeter</span></div>
+    </div>
+    <p class="panel-note">The map shows the campus layout. Parking overview shows the smaller simulated bay set used for the incident.</p>
+  </section>`;
 }
 
 function gateLedger(full = true) {
@@ -164,9 +209,9 @@ function roomsPanel() {
   const roomStatus = state.branches.room.status;
   const old = last !== undefined && state.clock - last.at > 12;
   let presence = "Occupancy awaiting scenario";
-  if (last) presence = old ? "Occupancy feed stale" : last.count ? "1 person detected" : "0 people detected";
+  if (last) presence = old ? "Occupancy feed stale" : `${last.count} ${last.count === 1 ? "person" : "people"} detected`;
   const devices = Object.entries(room.devices).map(([name, status]) =>
-    `<div class="device ${status === "On" ? "" : "confirmed"}"><span>${name}</span>
+    `<div class="device ${status === "On" ? "" : "confirmed"}"><span>${escape(name)}</span>
        <strong>${escape(status)}</strong>
        <small>${roomStatus === "verified" ? "Mock readback" : "Simulated state"}</small></div>`
   ).join("");
@@ -175,34 +220,44 @@ function roomsPanel() {
     <div class="panel-head"><div><h2>Classroom C-101</h2>
        <p>${last ? `Synthetic occupancy · last sample ${clock(last.at)}` : "Original location · device state simulated"}</p></div>
        ${badge(stages[roomStatus], roomStatus)}</div>
-    <div class="room-evidence">
-      <span class="evidence ${old || last?.count ? "alert" : ""}">${presence}</span>
-      <span class="evidence">${room.booking ? "Booking active" : "Calendar clear"}</span>
-      <span class="evidence ${room.hold ? "alert" : ""}">Manual hold ${room.hold ? "on" : "off"}</span>
+    <div class="overview-layout">
+      <figure class="overview-media">
+        <img src="/static/resource-library.webp" width="1280" height="720" alt="">
+        <figcaption class="media-caption">Illustrative campus interior</figcaption>
+      </figure>
+      <div class="meter-stage">
+        <div class="room-meter ${old || last?.count ? "attention" : ""}">
+          <div><strong>${last && !old ? escape(last.count) : "—"}</strong><span>${presence}</span></div>
+        </div>
+        <div class="room-evidence">
+          <span class="evidence">${room.booking ? "Booking active" : "Calendar clear"}</span>
+          <span class="evidence ${room.hold ? "alert" : ""}">Manual hold ${room.hold ? "on" : "off"}</span>
+        </div>
+      </div>
+      <div class="device-grid">${devices}</div>
     </div>
-    <div class="device-grid">${devices}</div>
   </section>
   <section class="panel">
     <div class="panel-head"><div><h2>Shared resources</h2><p>Sample availability</p></div></div>
     <div class="catalog">
-      <div><strong>Lab 2</strong><span>${state.session ? "Booked · 14:20–15:05" : "Open · afternoon"}</span></div>
-      <div><strong>Library quiet zone</strong><span>12 of 24 seats free</span></div>
-      <div><strong>Sports equipment</strong><span>${state.equipment.available} of ${state.equipment.total} kits available</span></div>
+      <button type="button" data-section="labs"><strong>Lab 2</strong><span>${state.session ? `Booked · ${escape(state.session.start)}–${escape(state.session.end)}` : "Open · afternoon"}</span></button>
+      <button type="button" data-section="library"><strong>Library quiet zone</strong><span>12 of 24 seats free</span></button>
+      <button type="button" data-section="equipment"><strong>Sports equipment</strong><span>${state.equipment.available} of ${state.equipment.total} kits available</span></button>
     </div>
   </section>`;
 }
 
 function labsPanel() {
-  const booked = Boolean(state.session);
+  const booking = state.session?.room === "Lab 2" ? state.session : null;
   return `<section class="panel">
     <div class="panel-head"><div><h2>Lab 2</h2><p>Afternoon timetable · synthetic booking</p></div>
-    ${badge(booked ? "Booked" : "Available", booked ? "verified" : "idle")}</div>
+    ${badge(booking ? "Booked" : "Available", booking ? "verified" : "idle")}</div>
     <div class="detail-grid">
-      <div><span>Session</span><strong>${booked ? "Lab induction" : "Unassigned"}</strong></div>
-      <div><span>Booking window</span><strong>${booked ? "14:20–15:05" : "—"}</strong></div>
-      <div><span>Timetable revision</span><strong>${escape(state.session?.revision || "—")}</strong></div>
+      <div><span>Session</span><strong>${escape(booking?.name ?? "Unassigned")}</strong></div>
+      <div><span>Booking window</span><strong>${booking ? escape(`${booking.start}–${booking.end}`) : "—"}</strong></div>
+      <div><span>Timetable revision</span><strong>${escape(booking?.revision ?? "—")}</strong></div>
     </div>
-    <p class="panel-note">${booked ? "The timetable moved this session from C-101 to Lab 2." : "The current timetable keeps lab induction in C-101."}</p>
+    <p class="panel-note">${booking ? `Previous location · ${escape(booking.previous_room)}` : "No sample booking for Lab 2."}</p>
   </section>`;
 }
 
@@ -236,7 +291,7 @@ function equipmentPanel() {
 }
 
 const renderSections = {
-  parking: parkingOverview, gate: gateLedger, overflow: overflowPanel, rooms: roomsPanel,
+  parking: parkingOverview, map: campusMap, gate: gateLedger, overflow: overflowPanel, rooms: roomsPanel,
   labs: labsPanel, library: libraryPanel, equipment: equipmentPanel,
 };
 
@@ -291,14 +346,15 @@ function currentControl() {
   }
   if (branch.status === "held" || branch.status === "rejected") {
     const buttons = key === "room" ? action("vacant", "Recheck sustained vacancy", "primary") :
-      linkView("resources", "Open resource view");
+      '<a class="button primary" href="/resources">Open resource view</a>';
     return ["Adapt", key === "room" ? "Standby on hold" : "Parking staff review", branch.detail, buttons];
   }
   if (key === "parking") {
     const exitDone = state.events.includes("GATE-EXIT-021");
     return [
       "Verify", `${branch.bay} assignment verified`, branch.detail,
-      exitDone ? linkView("resources", "Open resource view") : action("exit", "Confirm regular car exit", "primary"),
+      exitDone ? '<a class="button primary" href="/resources">Open resource view</a>' :
+        action("exit", "Confirm regular car exit", "primary"),
     ];
   }
   return ["Explain", "Device state verified", branch.detail, action("audit", "View decision audit", "primary")];
@@ -306,11 +362,8 @@ function currentControl() {
 
 function consolePanel() {
   const [stage, title, detail, buttons, role] = currentControl();
-  const intakeMode = busy ? "Local simulation" : state.intake?.label ??
+  const intakeMode = state.intake?.label ??
     (state.model_available ? "Gemini configured · synthetic input" : "Structured intake · offline");
-  const recent = [...state.audit].reverse().slice(0, 3);
-  const recentRows = recent.map((log) => `<li><span class="stage">${escape(log.stage)}</span>
-    <strong>${escape(log.title)}</strong></li>`).join("");
   return `<section class="panel control">
     <div class="panel-head"><h2>Demo control</h2>${badge(stage, busy ? "working" : "idle")}</div>
     <p class="mode">${escape(intakeMode)}</p>
@@ -318,8 +371,13 @@ function consolePanel() {
     ${role ? `<span class="review-label">Simulated reviewer · ${escape(role)}</span>` : ""}
     <div class="actions">${buttons}</div>
     ${scenarioOptions()}
-    </section>
-    <section class="panel activity">
+    </section>`;
+}
+
+function activityPanel() {
+  const recentRows = state.audit.slice(-3).reverse().map((log) => `<li>
+    <span class="stage">${escape(log.stage)}</span><strong>${escape(log.title)}</strong></li>`).join("");
+  return `<section class="panel activity">
       <div class="panel-head"><h2>Recent activity</h2></div>
       ${recentRows ? `<ol class="stage-log">${recentRows}</ol>` : '<p class="empty">Awaiting the first event.</p>'}
     </section>`;
@@ -340,22 +398,22 @@ function renderAudit() {
   </div>${rows ? `<ol class="full-log">${rows}</ol>` : '<p class="empty">No scenario actions yet.</p>'}`;
 }
 
-function render() {
-  renderIncident();
-  const section = selected[view];
-  const subnav = $("#subtabs");
-  subnav.setAttribute("aria-label", view === "fleet" ? "Vehicle fleet views" : "College resource views");
-  subnav.innerHTML = sections[view].map(([key, label]) =>
-    `<button type="button" data-section="${key}"${key === section ? ' aria-current="page"' : ""}>${label}</button>`
-  ).join("");
-  $("#operation").innerHTML = renderSections[section]();
-  $("#console").innerHTML = consolePanel();
-  if ($("#audit-dialog").open) renderAudit();
-  document.querySelectorAll(".tabs [data-view]").forEach((tab) => {
-    if (tab.dataset.view === view) tab.setAttribute("aria-current", "page");
+function renderSection() {
+  $("#subtabs").querySelectorAll("button").forEach((tab) => {
+    if (tab.dataset.section === section) tab.setAttribute("aria-current", "true");
     else tab.removeAttribute("aria-current");
   });
+  $("#operation").innerHTML = renderSections[section]();
+}
+
+function render() {
+  renderIncident();
+  renderSection();
+  $("#console").innerHTML = consolePanel();
+  $("#activity").innerHTML = activityPanel();
+  if ($("#audit-dialog").open) renderAudit();
   $(".reset").disabled = busy;
+  $(".header-actions [data-action=audit]").disabled = busy;
 }
 
 async function api(path, options) {
@@ -384,9 +442,7 @@ async function execute(name, key) {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
     if (name === "reset") {
-      view = "fleet";
-      selected.fleet = "parking";
-      selected.resources = "rooms";
+      section = workspace.sections[0][0];
     }
     $("#announcements").textContent = state.audit.at(-1)?.title ?? "Demo reset.";
   } catch (error) {
@@ -400,24 +456,16 @@ async function execute(name, key) {
     busy = false;
     render();
     if (name.endsWith("_kit")) $("#operation .actions button")?.focus({ preventScroll: true });
-    else if (name !== "reset") $(".control .actions button")?.focus({ preventScroll: true });
+    else if (name !== "reset") $(".control .actions :is(button, a)")?.focus({ preventScroll: true });
   }
 }
 
 document.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button || !state) return;
-  if (button.dataset.view) {
-    view = button.dataset.view;
-    const inConsole = button.closest("#console");
-    if (inConsole && view === "resources") selected.resources = "rooms";
-    render();
-    if (inConsole) $(".control .actions button")?.focus({ preventScroll: true });
-    return;
-  }
   if (button.dataset.section) {
-    selected[view] = button.dataset.section;
-    render();
+    section = button.dataset.section;
+    renderSection();
     $("#subtabs [aria-current]").focus({ preventScroll: true });
     return;
   }
@@ -430,7 +478,30 @@ document.addEventListener("click", (event) => {
   }
 });
 
-api("/api/state").then((initial) => {
-  state = initial;
-  render();
-}).catch(() => notify("CampusFlow could not connect to the local server. Check that it is running and reload."));
+async function loadState() {
+  const previousState = state;
+  try {
+    const latest = await api("/api/state");
+    if (busy || state !== previousState) return;
+    state = latest;
+    notify();
+    render();
+  } catch {
+    if (!busy && state === previousState) {
+      notify("CampusFlow could not connect to the local server. Check that it is running and reload.");
+    }
+  }
+}
+
+document.title = `${workspace.title} · CampusFlow`;
+$("#dashboard-area").textContent = workspace.area;
+$("#dashboard-title").textContent = workspace.title;
+$("#dashboard-description").textContent = workspace.description;
+$("#subtabs").innerHTML = workspace.sections.map(([key, label]) =>
+  `<button type="button" aria-controls="operation" data-section="${key}">${label}</button>`
+).join("");
+document.querySelector(`.workspaces-nav a[href="${workspace.path}"]`).setAttribute("aria-current", "page");
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted && !busy) loadState();
+});
+loadState();

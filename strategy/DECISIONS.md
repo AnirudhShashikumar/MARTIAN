@@ -18,5 +18,7 @@
 | 2026-11-25 | Use the supplied BMSITM crest in the CampusFlow header. | Keep the original lockup as a local asset and display the crest alongside a readable college name. The refreshed layout has been checked at 1600 px and 390 px. |
 | 2026-11-25 | Enter Checkpoint Beta after a top-ten shortlist place. | The team confirmed selection. The published event flow schedules shortlisted build work and 8:30 AM IST judging on November 26. Record any updated organizer instructions. |
 | 2026-11-25 | Recommend a verified model choice on variable notes as the Beta priority. | The recommendation extends the selected CampusFlow statement and the existing two-branch workflow. Benchmark against the structured option and keep the fallback releasable. [Round 2 plan](ROUND_2_EXECUTION_PLAN.md) |
+| 2026-11-25 | Make CampusFlow's landing page the entry point for two separate dashboards and place all workflow sections inside them. | Requested by the user. The dashboards share one incident, one audit and the existing approval engine. [Run guide](../prototype/README.md) |
+| 2026-11-25 | Use the supplied BMSITM parking layout as the fleet map. | The matching base floorplan comes from the existing team simulation. The operational counters and actions use the smaller synthetic incident fixture. |
 
 Pending Beta decisions are the judging rubric, team slot, demo duration, submission cutoff and channel, required files and official end time. Record owner, evidence, approval and rationale when each decision is made.
