@@ -5,29 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="page-type" content="software" />
 <meta name="site-kind" content="software" />
-<title>CampusFlow · Vehicle Fleet &amp; Parking Operations</title>
+<title>CampusFlow · Live Parking Agent</title>
 <style>
   :root {
-    --bg: #090c12;
-    --surface: #0f131c;
-    --surface-2: #151b27;
-    --surface-3: #1c2434;
+    --bg: #080b11;
+    --surface: #0e121b;
+    --surface-2: #151b28;
+    --surface-3: #1d2536;
     --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.15);
-    --text: #eef2f8;
-    --text-2: #a0aec4;
-    --text-3: #6c7a92;
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #f1f5f9;
+    --text-2: #94a3b8;
+    --text-3: #64748b;
     --emerald: #10b981;
-    --emerald-bg: rgba(16, 185, 129, 0.12);
+    --emerald-soft: rgba(16, 185, 129, 0.14);
     --amber: #f59e0b;
-    --amber-bg: rgba(245, 158, 11, 0.13);
+    --amber-soft: rgba(245, 158, 11, 0.15);
     --rose: #ef4444;
-    --rose-bg: rgba(239, 68, 68, 0.13);
+    --rose-soft: rgba(239, 68, 68, 0.14);
     --sky: #38bdf8;
-    --sky-bg: rgba(56, 189, 248, 0.13);
+    --sky-soft: rgba(56, 189, 248, 0.14);
     --accent: #f97316;
-    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
   }
@@ -44,7 +43,7 @@
 
   .app {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 416px;
+    grid-template-columns: minmax(0, 1fr) 392px;
     height: 100vh;
     width: 100vw;
   }
@@ -63,100 +62,53 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    padding: 12px 20px;
+    padding: 10px 18px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
-
   .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }
   .brand-mark {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
     background: var(--accent);
-    color: #090c12;
+    color: #080b11;
     font-weight: 800;
-    font-size: 13px;
-    letter-spacing: -0.02em;
+    font-size: 12.5px;
     display: grid;
     place-items: center;
   }
-  .brand-title {
+  .brand-name {
     font-size: 14px;
     font-weight: 700;
     letter-spacing: -0.01em;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
-  .brand-meta {
-    font-size: 11px;
+  .brand-sub {
+    font-size: 11.5px;
     color: var(--text-3);
+    margin-left: 8px;
     font-weight: 500;
   }
 
-  .top-controls {
+  .top-right {
     display: flex;
     align-items: center;
     gap: 8px;
   }
-  .clock-chip {
+  .clock {
     font-family: var(--mono);
     font-variant-numeric: tabular-nums;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11.5px;
     color: var(--text-2);
+    padding: 5px 9px;
+    border-radius: 6px;
     background: var(--surface-2);
     border: 1px solid var(--border);
-    padding: 5px 10px;
-    border-radius: 6px;
-  }
-
-  .demand-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 20px;
-    background: rgba(245, 158, 11, 0.07);
-    border-bottom: 1px solid rgba(245, 158, 11, 0.22);
-    font-size: 12px;
-    flex-shrink: 0;
-    transition: background-color 200ms var(--ease-out), border-color 200ms var(--ease-out);
-  }
-  .demand-bar.idle {
-    background: var(--surface);
-    border-bottom-color: var(--border);
-  }
-  .demand-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 99px;
-    background: var(--amber);
-    flex-shrink: 0;
-  }
-  .demand-bar.idle .demand-dot { background: var(--emerald); }
-  .demand-label {
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--amber);
-    flex-shrink: 0;
-  }
-  .demand-bar.idle .demand-label { color: var(--text-3); }
-  .demand-text {
-    color: var(--text);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .map-wrap {
@@ -166,9 +118,48 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 14px 20px;
+    padding: 12px 18px;
     overflow: hidden;
   }
+
+  /* Clean floating 1-line Live Story Caption over the map */
+  .story-pill {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(14, 18, 27, 0.92);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    max-width: calc(100% - 48px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    transition: border-color 180ms var(--ease);
+  }
+  .story-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 99px;
+    background: var(--emerald);
+    flex-shrink: 0;
+  }
+  .story-pill.warn { border-color: rgba(245, 158, 11, 0.65); }
+  .story-pill.warn .story-dot { background: var(--amber); }
+  .story-pill.alert { border-color: rgba(239, 68, 68, 0.65); }
+  .story-pill.alert .story-dot { background: var(--rose); }
+  .story-pill.sky { border-color: rgba(56, 189, 248, 0.65); }
+  .story-pill.sky .story-dot { background: var(--sky); }
 
   #simSvg {
     width: 100%;
@@ -177,7 +168,7 @@
     max-height: 100%;
     border-radius: 10px;
     border: 1px solid var(--border-strong);
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5);
     background: #131822;
     user-select: none;
   }
@@ -186,9 +177,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 9px 20px;
+    padding: 8px 18px;
     background: var(--surface);
     border-top: 1px solid var(--border);
     font-size: 11px;
@@ -198,27 +187,18 @@
   .legend-items {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
     gap: 14px;
+    flex-wrap: wrap;
   }
-  .legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .swatch {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
-    display: inline-block;
-  }
+  .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 9px; height: 9px; border-radius: 2.5px; display: inline-block; }
 
-  /* TOOLTIP (Origin-aware, fast) */
+  /* TOOLTIP */
   #tooltip {
     position: fixed;
     pointer-events: none;
     z-index: 60;
-    background: rgba(15, 19, 28, 0.96);
+    background: rgba(14, 18, 27, 0.96);
     border: 1px solid var(--border-strong);
     border-radius: 8px;
     padding: 8px 11px;
@@ -226,50 +206,46 @@
     color: var(--text);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
     display: none;
-    min-width: 178px;
+    min-width: 170px;
   }
-  #tooltip .tt-head { font-weight: 700; color: var(--text); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 10px; }
-  #tooltip .tt-row { color: var(--text-2); line-height: 1.5; font-size: 11px; }
+  #tooltip .tt-head { font-weight: 700; margin-bottom: 3px; display: flex; justify-content: space-between; gap: 10px; }
+  #tooltip .tt-row { color: var(--text-2); font-size: 11px; line-height: 1.45; }
   #tooltip .tt-hint { color: var(--sky); font-size: 10.5px; margin-top: 4px; font-weight: 600; }
 
-  /* SONNER-STYLE BOTTOM-RIGHT TOASTS (Emil Kowalski) */
+  /* TOASTS */
   #toastWrap {
     position: absolute;
-    bottom: 22px;
-    right: 28px;
+    bottom: 20px;
+    right: 26px;
     z-index: 30;
     display: flex;
     flex-direction: column;
     gap: 8px;
     pointer-events: none;
-    max-width: 330px;
+    max-width: 310px;
   }
   .toast {
-    background: rgba(15, 19, 28, 0.96);
+    background: rgba(14, 18, 27, 0.96);
     border: 1px solid var(--border-strong);
     border-left: 3px solid var(--sky);
     border-radius: 8px;
-    padding: 10px 13px;
+    padding: 9px 12px;
     font-size: 12px;
     font-weight: 500;
     color: var(--text);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
-    animation: toastEnter 200ms var(--ease-out) both;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+    animation: enterFade 180ms var(--ease) both;
   }
+  .toast.ok { border-left-color: var(--emerald); }
   .toast.warn { border-left-color: var(--amber); }
   .toast.err { border-left-color: var(--rose); }
-  .toast.ok { border-left-color: var(--emerald); }
   .toast.leaving {
     opacity: 0;
     transform: translateY(4px) scale(0.97);
-    transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
-  }
-  @keyframes toastEnter {
-    from { opacity: 0; transform: translateY(6px) scale(0.96); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    transition: opacity 140ms var(--ease), transform 140ms var(--ease);
   }
 
-  /* ================= RIGHT SIDEBAR (CLEAN LINEAR / TASTESKILL SYSTEM) ================= */
+  /* ================= CLEAN, EASY-TO-SHOWCASE RIGHT SIDEBAR ================= */
   .sidebar {
     display: flex;
     flex-direction: column;
@@ -278,182 +254,189 @@
     overflow: hidden;
   }
 
-  .side-section {
-    padding: 14px 18px;
+  .block {
+    padding: 14px 16px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
   }
 
-  .sec-head {
+  .block-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
   }
-  .sec-title {
+  .block-title {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-3);
   }
-  .sec-meta {
-    font-family: var(--mono);
-    font-variant-numeric: tabular-nums;
+  .link-btn {
+    background: transparent;
+    border: none;
+    padding: 2px 6px;
     font-size: 11px;
+    font-weight: 600;
     color: var(--text-2);
+    border-radius: 5px;
   }
+  .link-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); border: none; }
 
-  /* CLEAN METRIC LIST (No cluttered boxed card soup) */
-  .metric-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .metric-row {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-  .metric-top {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+  /* 1) AT-A-GLANCE LIVE COUNTS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .metric-name {
-    font-size: 12.5px;
+  .stat-tile {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 180ms var(--ease), background-color 180ms var(--ease);
+  }
+  .stat-tile.full { border-color: rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.08); }
+  .stat-tile.active { border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.08); }
+  .stat-tile.warn { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08); }
+
+  .stat-label {
+    font-size: 11px;
     font-weight: 600;
-    color: var(--text);
+    color: var(--text-2);
     display: flex;
     align-items: center;
-    gap: 7px;
+    justify-content: space-between;
   }
-  .status-chip {
+  .stat-state {
     font-size: 10px;
-    font-weight: 600;
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: var(--surface-2);
-    color: var(--text-2);
-    border: 1px solid var(--border);
+    font-weight: 700;
+    color: var(--emerald);
   }
-  .status-chip.full { background: var(--rose-bg); color: #fca5a5; border-color: rgba(239,68,68,0.3); }
-  .status-chip.active { background: var(--sky-bg); color: #7dd3fc; border-color: rgba(56,189,248,0.3); }
-  .status-chip.ok { background: var(--emerald-bg); color: #6ee7b7; border-color: rgba(16,185,129,0.3); }
-  .status-chip.warn { background: var(--amber-bg); color: #fcd34d; border-color: rgba(245,158,11,0.35); }
+  .stat-tile.full .stat-state { color: #fca5a5; }
+  .stat-tile.active .stat-state { color: #7dd3fc; }
+  .stat-tile.warn .stat-state { color: #fcd34d; }
 
-  .metric-num {
+  .stat-big {
     font-family: var(--mono);
     font-variant-numeric: tabular-nums;
-    font-size: 12.5px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     color: var(--text);
+    line-height: 1;
   }
-  .meter-track {
-    height: 4px;
+  .stat-big span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-3);
+  }
+  .meter {
+    height: 3.5px;
     border-radius: 99px;
-    background: var(--surface-3);
+    background: rgba(255, 255, 255, 0.07);
     overflow: hidden;
   }
-  .meter-fill {
+  .meter-bar {
     height: 100%;
     width: 100%;
     transform-origin: left center;
     transform: scaleX(0);
     background: var(--emerald);
-    transition: transform 240ms var(--ease-out), background-color 200ms var(--ease-out);
+    transition: transform 220ms var(--ease), background-color 180ms var(--ease);
   }
 
-  .overflow-strip {
-    margin-top: 10px;
-    padding: 8px 10px;
-    border-radius: 7px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 11.5px;
-  }
-  .overflow-strip span:first-child { color: var(--text-2); font-weight: 500; }
-  .overflow-strip strong {
-    font-family: var(--mono);
-    font-variant-numeric: tabular-nums;
-    color: var(--text);
-  }
-
-  /* SIGNBOARD STATUS STRIP */
-  .sign-strip {
-    margin-top: 10px;
-    padding: 9px 11px;
-    border-radius: 7px;
-    background: #070a10;
-    border: 1px solid var(--border);
-    font-family: var(--mono);
-  }
-  .sign-strip-top {
-    display: flex;
-    justify-content: space-between;
-    font-size: 9.5px;
-    color: var(--text-3);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 4px;
-  }
-  .sign-strip-val {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--emerald);
-    line-height: 1.4;
-    transition: color 180ms var(--ease-out);
-  }
-  .sign-strip-val.redirect { color: var(--amber); }
-  .sign-strip-val.alert { color: #f87171; }
-
-  /* HUMAN-IN-THE-LOOP APPROVAL PANEL (Static crisp border, zero looping slop) */
+  /* APPROVAL CARD (Slides in cleanly ONLY when needed) */
   #approvalCard {
     display: none;
-    margin-top: 12px;
+    margin-top: 10px;
     padding: 12px;
-    border-radius: 8px;
-    background: rgba(245, 158, 11, 0.09);
-    border: 1px solid rgba(245, 158, 11, 0.5);
-    animation: panelEnter 180ms var(--ease-out) both;
+    border-radius: 9px;
+    background: rgba(245, 158, 11, 0.11);
+    border: 1.5px solid rgba(245, 158, 11, 0.65);
+    animation: enterFade 180ms var(--ease) both;
   }
   #approvalCard.visible { display: block; }
-  @keyframes panelEnter {
-    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  .ap-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-    font-size: 12px;
+  .ap-title {
+    font-size: 12.5px;
     font-weight: 700;
     color: #fcd34d;
+    margin-bottom: 4px;
   }
-  .ap-head code {
-    font-family: var(--mono);
-    font-size: 11px;
+  .ap-desc {
+    font-size: 12px;
     color: var(--text);
-  }
-  .ap-body {
-    font-size: 11.5px;
-    color: var(--text-2);
-    line-height: 1.45;
+    line-height: 1.4;
     margin-bottom: 10px;
   }
-  .ap-body strong { color: var(--text); }
-  .ap-actions {
+  .ap-btns {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
-  /* BUTTON SYSTEM (Emil Kowalski tactile scale(0.97) on press + fast 150ms curve) */
+  /* 2) GUIDED 1-2-3 SHOWCASE BUTTONS */
+  .demo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 11px;
+  }
+  .demo-btn {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 9px 11px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    gap: 10px;
+  }
+  .demo-btn:hover:not(:disabled) {
+    background: var(--surface-3);
+    border-color: var(--border-strong);
+  }
+  .demo-btn.featured {
+    background: rgba(249, 115, 22, 0.13);
+    border-color: rgba(249, 115, 22, 0.45);
+  }
+  .demo-btn.featured:hover:not(:disabled) {
+    background: rgba(249, 115, 22, 0.22);
+    border-color: rgba(249, 115, 22, 0.7);
+  }
+  .demo-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--surface-3);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .demo-btn.featured .demo-num {
+    background: var(--accent);
+    color: #080b11;
+  }
+  .demo-text { display: flex; flex-direction: column; gap: 1px; }
+  .demo-title { font-size: 12.5px; font-weight: 700; color: var(--text); }
+  .demo-sub { font-size: 10.5px; font-weight: 500; color: var(--text-2); }
+
+  /* COMPACT +/- FLEET BAR */
+  .quick-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  /* BUTTONS */
   button {
     font-family: inherit;
     cursor: pointer;
@@ -461,188 +444,107 @@
     background: var(--surface-2);
     color: var(--text);
     border-radius: 7px;
-    padding: 7px 10px;
+    padding: 7px 9px;
     font-size: 12px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    transition: background-color 150ms var(--ease-out), border-color 150ms var(--ease-out), transform 120ms var(--ease-out), color 150ms var(--ease-out);
+    gap: 5px;
+    transition: background-color 150ms var(--ease), border-color 150ms var(--ease), transform 110ms var(--ease);
   }
-  button:hover:not(:disabled) {
-    background: var(--surface-3);
-    border-color: var(--border-strong);
-  }
-  button:active:not(:disabled) {
-    transform: scale(0.97);
-  }
-  button:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
+  button:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-strong); }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  .btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #090c12;
-    font-weight: 700;
-  }
-  .btn-primary:hover:not(:disabled) {
-    background: #fb923c;
-    border-color: #fb923c;
-  }
-  .btn-secondary {
-    background: var(--sky-bg);
-    border-color: rgba(56, 189, 248, 0.35);
-    color: #bae6fd;
-  }
-  .btn-secondary:hover:not(:disabled) {
-    background: rgba(56, 189, 248, 0.22);
-    border-color: rgba(56, 189, 248, 0.55);
-  }
-  .btn-approve {
-    background: var(--emerald);
-    border-color: var(--emerald);
-    color: #062118;
-    font-weight: 700;
-  }
+  .btn-approve { background: var(--emerald); border-color: var(--emerald); color: #052017; font-weight: 700; }
   .btn-approve:hover:not(:disabled) { background: #34d399; border-color: #34d399; }
-  .btn-reject {
-    background: var(--rose-bg);
-    border-color: rgba(239, 68, 68, 0.4);
-    color: #fecaca;
-  }
-  .btn-reject:hover:not(:disabled) { background: rgba(239, 68, 68, 0.24); }
+  .btn-reject { background: var(--rose-soft); border-color: rgba(239, 68, 68, 0.45); color: #fecaca; }
+  .btn-reject:hover:not(:disabled) { background: rgba(239, 68, 68, 0.25); }
   .btn-sm { padding: 5px 9px; font-size: 11.5px; }
   .btn-xs { padding: 3px 7px; font-size: 10.5px; border-radius: 5px; }
 
-  .preset-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .action-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-  }
-
-  .step-strip {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .step-toggle {
-    font-size: 11.5px;
-    color: var(--text-2);
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .step-hint {
-    margin-top: 6px;
-    font-size: 11px;
-    color: var(--text-3);
-    line-height: 1.35;
-  }
-  .step-hint strong { color: var(--text-2); }
-
-  /* LOWER TABS */
-  .tabs-area {
+  /* 3) LIVE AI LOOP + QUIET VIEW SWITCHER (AI Loop | Parked DB | Audit) */
+  .inspector {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
   }
-  .tab-bar {
-    position: relative;
+  .seg-bar {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    padding: 10px 16px 8px;
     flex-shrink: 0;
-    padding: 0 8px;
   }
-  .tab-btn {
-    border: none;
-    border-radius: 0;
-    background: transparent;
-    color: var(--text-3);
-    padding: 10px 4px;
+  .seg-btn {
+    padding: 6px 6px;
     font-size: 11.5px;
     font-weight: 600;
-    border-bottom: 2px solid transparent;
+    color: var(--text-2);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
   }
-  .tab-btn:hover { background: transparent; color: var(--text-2); }
-  .tab-btn:active { transform: none; }
-  .tab-btn.active {
+  .seg-btn:hover { background: var(--surface-2); color: var(--text); }
+  .seg-btn.active {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
     color: var(--text);
-    border-bottom-color: var(--accent);
   }
 
-  .tab-pane {
+  .pane {
     display: none;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 12px 18px;
+    padding: 4px 16px 14px;
   }
-  .tab-pane.active {
-    display: block;
-    animation: tabFade 160ms var(--ease-out) both;
-  }
-  @keyframes tabFade {
-    from { opacity: 0; transform: translateY(3px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  .pane.active { display: block; animation: enterFade 150ms var(--ease) both; }
 
-  /* AGENT FEED */
-  .feed-item {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 11.5px;
-    animation: panelEnter 180ms var(--ease-out) both;
-  }
-  .feed-item:last-child { border-bottom: none; }
-  .feed-head {
+  /* 4-STAGE VISUAL AI PIPELINE (SENSE -> THINK -> ACT -> EXPLAIN) */
+  .loop-card {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
+    flex-direction: column;
+    gap: 8px;
   }
-  .phase-tag {
-    font-family: var(--mono);
-    font-size: 9.5px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: var(--sky-bg);
-    color: #7dd3fc;
+  .loop-step {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--text-3);
+    border-radius: 7px;
+    padding: 9px 11px;
+    transition: border-color 180ms var(--ease), background-color 180ms var(--ease);
   }
-  .phase-THINK .phase-tag { background: rgba(167,139,250,0.15); color: #ddd6fe; }
-  .phase-ACT .phase-tag { background: var(--emerald-bg); color: #6ee7b7; }
-  .phase-EXPLAIN .phase-tag { background: var(--amber-bg); color: #fde68a; }
-  .phase-GUARD .phase-tag { background: var(--rose-bg); color: #fca5a5; }
-  .feed-time {
+  .loop-step.s-sense { border-left-color: var(--sky); }
+  .loop-step.s-think { border-left-color: #a78bfa; }
+  .loop-step.s-act { border-left-color: var(--emerald); }
+  .loop-step.s-explain { border-left-color: var(--amber); }
+  .loop-step.s-guard { border-left-color: var(--rose); background: rgba(239, 68, 68, 0.08); }
+
+  .loop-label {
     font-family: var(--mono);
     font-size: 10px;
-    color: var(--text-3);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
   }
-  .feed-title { font-weight: 600; color: var(--text); margin-bottom: 2px; }
-  .feed-body { color: var(--text-2); line-height: 1.45; }
-  .feed-sub { color: var(--text-3); font-size: 10.5px; margin-top: 3px; }
+  .s-sense .loop-label { color: #7dd3fc; }
+  .s-think .loop-label { color: #ddd6fe; }
+  .s-act .loop-label { color: #6ee7b7; }
+  .s-explain .loop-label { color: #fde68a; }
+  .s-guard .loop-label { color: #fca5a5; }
+  .loop-text {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+  }
 
-  /* DB & AUDIT TABLES */
+  /* TABLES */
   .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -659,16 +561,15 @@
     font-weight: 700;
     text-transform: uppercase;
     font-size: 9.5px;
-    letter-spacing: 0.05em;
     position: sticky;
     top: 0;
     background: var(--surface);
   }
-  .db-toolbar {
+  .db-bar {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    align-items: center;
+    margin-bottom: 6px;
     font-size: 11px;
     color: var(--text-2);
   }
@@ -676,13 +577,15 @@
   .tag-pend { color: #fcd34d; font-weight: 600; }
   .tag-rej { color: #fca5a5; font-weight: 600; }
 
-  /* SVG ROUTE FLOW */
+  @keyframes enterFade {
+    from { opacity: 0; transform: translateY(4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
   @keyframes dashFlow {
     to { stroke-dashoffset: -36; }
   }
-  .route-flow { animation: dashFlow 1.1s linear infinite; }
+  .route-flow { animation: dashFlow 1s linear infinite; }
 
-  /* ACCESSIBILITY: MANDATORY REDUCED MOTION PATH */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -691,38 +594,37 @@
     }
   }
 
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- LEFT MAP STAGE -->
+  <!-- LEFT: CLEAN FULL-HEIGHT CAMPUS MAP -->
   <div class="stage">
     <header class="topbar">
       <div class="brand">
         <div class="brand-mark">CF</div>
-        <div>
-          <div class="brand-title">CampusFlow · Vehicle Fleet &amp; Parking</div>
-          <div class="brand-meta">Sense → Think → Act → Explain · Live Persistent Slot DB · Synthetic Telemetry</div>
-        </div>
+        <span class="brand-name">CampusFlow</span>
+        <span class="brand-sub">Parking &amp; Fleet Operations Agent</span>
       </div>
-      <div class="top-controls">
-        <div class="clock-chip" id="simClock">14:00:00 IST</div>
-        <button class="btn-sm" id="btnSpeed">1× Speed</button>
+      <div class="top-right">
+        <span class="clock" id="simClock">14:00:00 IST</span>
+        <button class="btn-sm" id="btnSpeed">1.5× Speed</button>
         <button class="btn-sm" id="btnPause">Pause</button>
       </div>
     </header>
 
-    <div class="demand-bar idle" id="demandBar">
-      <span class="demand-dot"></span>
-      <span class="demand-label" id="demandTag">Live Monitor</span>
-      <span class="demand-text" id="demandText">3 vision cameras online (Main Gate, Car Lot, Bike Lot) — click any parked vehicle to remove it dynamically.</span>
-    </div>
-
     <div class="map-wrap">
+      <!-- Single clear live caption telling judges what is happening right now -->
+      <div class="story-pill" id="storyPill">
+        <span class="story-dot"></span>
+        <span id="storyText">3 cameras online — pick a numbered demo on the right or click any parked car/bike to remove it.</span>
+      </div>
+
       <div id="toastWrap"></div>
+
       <svg id="simSvg" viewBox="0 0 1264 848" preserveAspectRatio="xMidYMid meet">
         <defs>
           <filter id="glowSky" x="-30%" y="-30%" width="160%" height="160%">
@@ -733,10 +635,6 @@
             <feGaussianBlur stdDeviation="3" result="blur"/>
             <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
-          <linearGradient id="camFovGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.34"/>
-            <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.02"/>
-          </linearGradient>
         </defs>
 
         <!-- Base Top-Down Parking Floorplan -->
@@ -744,28 +642,28 @@
 
         <!-- Switched Entry (LEFT) & Exit (RIGHT) Gate Indicator -->
         <g font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="800" font-size="10" letter-spacing="0.05em">
-          <rect x="564" y="742" width="138" height="22" rx="6" fill="rgba(9,12,18,0.88)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+          <rect x="564" y="742" width="138" height="22" rx="6" fill="rgba(8,11,17,0.9)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
           <text x="600" y="756.5" text-anchor="middle" fill="#6ee7b7">ENTRY ▲</text>
           <line x1="633" y1="746" x2="633" y2="760" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
           <text x="666" y="756.5" text-anchor="middle" fill="#fca5a5">▼ EXIT</text>
         </g>
 
-        <!-- Dynamic Active Route Guidance Layer (Overflow Straight->Right OR Bike Zone 2 Perimeter) -->
+        <!-- Active Route Guidance Layer -->
         <g id="routeLayer"></g>
 
-        <!-- Interactive Parking Slots + Persistent Parked Vehicle Icons Layer -->
+        <!-- Interactive Slots + Permanently Rendered Parked Vehicles -->
         <g id="slotsLayer"></g>
 
-        <!-- 3 Campus Vision Cameras Layer (Main Gate, Car Lot, Bike Lot) -->
+        <!-- 3 Campus Vision Cameras -->
         <g id="camerasLayer"></g>
 
-        <!-- Moving Vehicles In Transit Layer -->
+        <!-- Moving Vehicles In Transit -->
         <g id="vehiclesLayer"></g>
 
-        <!-- SIGN_JUNCTION Digital Display Board (Inner Left Corner of Central T-Junction) -->
+        <!-- SIGN_JUNCTION Live Digital Signboard -->
         <g id="signJunctionGroup" style="cursor:pointer;">
           <line x1="574" y1="506" x2="554" y2="484" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="3 2"/>
-          <circle cx="575" cy="508" r="6.5" fill="#0f131c" stroke="#f59e0b" stroke-width="2.2"/>
+          <circle cx="575" cy="508" r="6.5" fill="#0e121b" stroke="#f59e0b" stroke-width="2.2"/>
           <circle cx="575" cy="508" r="2.6" fill="#fbbf24"/>
 
           <rect id="signBox" x="348" y="418" width="238" height="66" rx="8" fill="#070a10" stroke="#38bdf8" stroke-width="2"/>
@@ -780,155 +678,165 @@
 
     <footer class="legend-bar">
       <div class="legend-items">
-        <span class="legend-item"><span class="swatch" style="background:rgba(16,185,129,0.28);border:1.5px solid #10b981;"></span>Available</span>
-        <span class="legend-item"><span class="swatch" style="background:rgba(245,158,11,0.3);border:1.5px dashed #f59e0b;"></span>Inbound</span>
-        <span class="legend-item"><span class="swatch" style="background:rgba(239,68,68,0.55);border:1.5px solid #fca5a5;"></span>Occupied (Stored in DB)</span>
+        <span class="legend-item"><span class="swatch" style="background:rgba(16,185,129,0.3);border:1.5px solid #10b981;"></span>Open</span>
+        <span class="legend-item"><span class="swatch" style="background:rgba(239,68,68,0.5);border:1.5px solid #f87171;"></span>Parked (Click to exit)</span>
         <span class="legend-item"><span class="swatch" style="background:rgba(56,189,248,0.3);border:1.5px solid #38bdf8;"></span>♿ Accessible</span>
-        <span class="legend-item"><span class="swatch" style="background:#0f172a;border:1.5px solid #38bdf8;border-radius:99px;"></span>Vision Camera (3)</span>
+        <span class="legend-item"><span class="swatch" style="background:#0e121b;border:1.5px solid #38bdf8;border-radius:99px;"></span>3 Cameras (Gate, Car, Bike)</span>
       </div>
-      <div style="font-family:var(--mono);font-size:10.5px;color:var(--text-3);">Click any parked car/bike to exit &amp; free slot</div>
+      <span style="color:var(--text-3);font-family:var(--mono);font-size:10.5px;">Synthetic data · Saved in local DB</span>
     </footer>
   </div>
 
-  <!-- RIGHT SIDEBAR (CLEANED UP VIA DESIGN-TASTE-FRONTEND + DESIGN-MOTION-PRINCIPLES) -->
+  <!-- RIGHT: SIMPLE, SCANNABLE 3-BLOCK PRESENTER PANEL -->
   <aside class="sidebar">
-    <!-- 1. LIVE TELEMETRY & SIGNBOARD -->
-    <section class="side-section">
-      <div class="sec-head">
-        <span class="sec-title">Live Capacity &amp; DB State</span>
-        <span class="sec-meta" id="activeVehiclesBadge">0 in transit</span>
+    <!-- BLOCK 1: LIVE CAPACITY AT A GLANCE -->
+    <section class="block">
+      <div class="block-head">
+        <span class="block-title">Live Parking Status</span>
+        <button class="link-btn" id="btnReset">Reset</button>
       </div>
 
-      <div class="metric-list">
-        <div class="metric-row">
-          <div class="metric-top">
-            <span class="metric-name">Car Parking <span class="status-chip ok" id="chipCar">2 ♿ open</span></span>
-            <span class="metric-num" id="valCar">0 / 30</span>
-          </div>
-          <div class="meter-track"><div class="meter-fill" id="barCar"></div></div>
+      <div class="stats-grid">
+        <div class="stat-tile" id="tileCar">
+          <div class="stat-label"><span>Cars</span><span class="stat-state" id="stCar">Open</span></div>
+          <div class="stat-big"><b id="numCar">0</b><span> / 30</span></div>
+          <div class="meter"><div class="meter-bar" id="barCar"></div></div>
         </div>
 
-        <div class="metric-row">
-          <div class="metric-top">
-            <span class="metric-name">Bike Lot 1 <span class="status-chip ok" id="chipBike1">Primary</span></span>
-            <span class="metric-num" id="valBike1">0 / 64</span>
-          </div>
-          <div class="meter-track"><div class="meter-fill" id="barBike1"></div></div>
+        <div class="stat-tile" id="tileBike1">
+          <div class="stat-label"><span>Bikes (Main)</span><span class="stat-state" id="stBike1">Open</span></div>
+          <div class="stat-big"><b id="numBike1">0</b><span> / 64</span></div>
+          <div class="meter"><div class="meter-bar" id="barBike1"></div></div>
         </div>
 
-        <div class="metric-row">
-          <div class="metric-top">
-            <span class="metric-name">Bike Zone 2 <span class="status-chip" id="chipBike2">Standby</span></span>
-            <span class="metric-num" id="valBike2">0 / 18</span>
-          </div>
-          <div class="meter-track"><div class="meter-fill" id="barBike2"></div></div>
+        <div class="stat-tile" id="tileBike2">
+          <div class="stat-label"><span>Bike Zone 2</span><span class="stat-state" id="stBike2" style="color:var(--text-3);">Standby</span></div>
+          <div class="stat-big"><b id="numBike2">0</b><span> / 18</span></div>
+          <div class="meter"><div class="meter-bar" id="barBike2"></div></div>
+        </div>
+
+        <div class="stat-tile" id="tileOverflow">
+          <div class="stat-label"><span>Car Overflow</span><span class="stat-state" id="stOv" style="color:var(--text-3);">Ready</span></div>
+          <div class="stat-big"><b id="numOv">0</b><span> routed</span></div>
+          <div class="meter"><div class="meter-bar" id="barOv" style="background:var(--amber);"></div></div>
         </div>
       </div>
 
-      <div class="overflow-strip">
-        <span>Car Overflow Redirect (Ahead → Right)</span>
-        <strong id="valOverflowCount">0 routed</strong>
-      </div>
-
-      <div class="sign-strip">
-        <div class="sign-strip-top">
-          <span>SIGN_JUNCTION Readout</span>
-          <span id="signStatePill" style="color:var(--emerald);">NORMAL</span>
-        </div>
-        <div class="sign-strip-val" id="signMirrorText">BIKE LOT 1: OPEN (LEFT) | CAR LOT: OPEN (RIGHT)</div>
-      </div>
-
-      <!-- HUMAN-IN-THE-LOOP APPROVAL PANEL -->
+      <!-- HUMAN-IN-THE-LOOP APPROVAL CARD -->
       <div id="approvalCard">
-        <div class="ap-head">
-          <span>Attendant Approval Required</span>
-          <code id="apVehicleTag">CAR-VIS-01</code>
-        </div>
-        <div class="ap-body" id="apBody">
-          Car parking is at <strong>30/30</strong> capacity. Approve overflow redirect to route this vehicle <strong>straight ahead and right</strong> to the external overflow lot?
-        </div>
-        <div class="ap-actions">
-          <button class="btn-approve" id="btnApproveOv">Approve Redirect</button>
+        <div class="ap-title">Attendant Approval Needed</div>
+        <div class="ap-desc" id="apDesc">Car lot is full (30/30). Route <strong>CAR-VIS-01</strong> straight ahead and right to Overflow?</div>
+        <div class="ap-btns">
+          <button class="btn-approve" id="btnApproveOv">Approve Overflow ↗</button>
           <button class="btn-reject" id="btnRejectOv">Reject &amp; Exit</button>
         </div>
       </div>
     </section>
 
-    <!-- 2. SCENARIOS & FLEET CONTROLS -->
-    <section class="side-section">
-      <div class="sec-head">
-        <span class="sec-title">Demo Cases &amp; Controls</span>
-        <span class="sec-meta" id="dbSavedBadge">DB Synced</span>
+    <!-- BLOCK 2: 1-2-3 QUICK SHOWCASE DEMOS + SIMPLE +/- CONTROLS -->
+    <section class="block">
+      <div class="block-head">
+        <span class="block-title">Quick Showcase</span>
+        <span style="font-size:11px;color:var(--text-3);">Click 1 → 2 → 3</span>
       </div>
 
-      <div class="preset-row">
-        <button class="btn-primary" id="btnPresetHook">Round 1 Hook</button>
-        <button class="btn-secondary" id="btnPresetBike2">Bike Full → Zone 2</button>
+      <div class="demo-list">
+        <button class="demo-btn featured" id="btnDemo1">
+          <span class="demo-num">1</span>
+          <span class="demo-text">
+            <span class="demo-title">Car Lot Full → Overflow Approval</span>
+            <span class="demo-sub">Class shift C-101 → Lab 2 · Route car straight &amp; right</span>
+          </span>
+        </button>
+
+        <button class="demo-btn" id="btnDemo2">
+          <span class="demo-num">2</span>
+          <span class="demo-text">
+            <span class="demo-title">Bike Lot Full → Right Perimeter Redirect</span>
+            <span class="demo-sub">Signboard flips automatically → Bike Zone 2</span>
+          </span>
+        </button>
+
+        <button class="demo-btn" id="btnDemo3">
+          <span class="demo-num">3</span>
+          <span class="demo-text">
+            <span class="demo-title">Test Duplicate Scan Guard</span>
+            <span class="demo-sub">Gate camera blocks duplicate entry from corrupting DB</span>
+          </span>
+        </button>
       </div>
 
-      <div class="action-grid">
-        <button class="btn-sm" id="btnSpawnCar">+ Car</button>
-        <button class="btn-sm" id="btnRemoveCar">− Car</button>
-        <button class="btn-sm" id="btnDupScan">Dup Scan</button>
-        <button class="btn-sm" id="btnSpawnBike">+ Bike</button>
-        <button class="btn-sm" id="btnRemoveBike">− Bike</button>
-        <button class="btn-sm" id="btnReset">Reset DB</button>
+      <div class="quick-bar">
+        <button class="btn-sm" id="btnAddCar">+ Car</button>
+        <button class="btn-sm" id="btnRemCar">− Car</button>
+        <button class="btn-sm" id="btnAddBike">+ Bike</button>
+        <button class="btn-sm" id="btnRemBike">− Bike</button>
       </div>
-
-      <div class="step-strip">
-        <label class="step-toggle">
-          <input type="checkbox" id="chkStepMode" />
-          Step-by-Step Mode
-        </label>
-        <button class="btn-xs btn-approve" id="btnNextStep" disabled>Next Step →</button>
-      </div>
-      <div class="step-hint" id="stepDesc">Run a demo preset or spawn/remove vehicles directly. Click any parked bay to release it.</div>
     </section>
 
-    <!-- 3. TABBED INSPECTOR (AGENT / LIVE DB / AUDIT / SIGN) -->
-    <div class="tabs-area">
-      <div class="tab-bar">
-        <button class="tab-btn active" data-tab="tabAgent">Agent</button>
-        <button class="tab-btn" data-tab="tabDb">DB (<span id="dbCount">0</span>)</button>
-        <button class="tab-btn" data-tab="tabAudit">Audit (<span id="auditCount">0</span>)</button>
-        <button class="tab-btn" data-tab="tabSign">Sign (<span id="signCount">1</span>)</button>
+    <!-- BLOCK 3: LIVE AI LOOP (DEFAULT) / PARKED DB / AUDIT -->
+    <div class="inspector">
+      <div class="seg-bar">
+        <button class="seg-btn active" data-pane="paneLoop">AI Decision</button>
+        <button class="seg-btn" data-pane="paneDb">Parked (<span id="dbCount">0</span>)</button>
+        <button class="seg-btn" data-pane="paneAudit">Audit (<span id="auditCount">0</span>)</button>
       </div>
 
-      <div class="tab-pane active" id="tabAgent"></div>
+      <!-- PLAIN-ENGLISH 4-STEP AI PIPELINE FOR CURRENT EVENT -->
+      <div class="pane active" id="paneLoop">
+        <div class="loop-card">
+          <div class="loop-step s-sense" id="stepSense">
+            <div class="loop-label"><span>1 · Sense</span><span id="timeSense">—</span></div>
+            <div class="loop-text" id="txtSense">Cameras monitoring Main Gate, Car Lot, and Bike Lot.</div>
+          </div>
+          <div class="loop-step s-think" id="stepThink">
+            <div class="loop-label"><span>2 · Think</span><span>Policy &amp; Rules</span></div>
+            <div class="loop-text" id="txtThink">Checks live DB counts, keeps cars and bikes separated, protects ♿ bays.</div>
+          </div>
+          <div class="loop-step s-act" id="stepAct">
+            <div class="loop-label"><span>3 · Act</span><span>Sign &amp; Routing</span></div>
+            <div class="loop-text" id="txtAct">Assigns open bays automatically; asks attendant before car overflow.</div>
+          </div>
+          <div class="loop-step s-explain" id="stepExplain">
+            <div class="loop-label"><span>4 · Explain &amp; Verify</span><span>DB Readback</span></div>
+            <div class="loop-text" id="txtExplain">Confirms vehicle parked in bay and writes record to persistent DB.</div>
+          </div>
+        </div>
+      </div>
 
-      <div class="tab-pane" id="tabDb">
-        <div class="db-toolbar">
-          <span id="dbSummaryText">0 vehicles committed in local DB</span>
-          <button class="btn-xs" id="btnClearAll">Empty Lots</button>
+      <!-- LIVE PERSISTENT PARKED VEHICLE DATABASE -->
+      <div class="pane" id="paneDb">
+        <div class="db-bar">
+          <span id="dbSummary">0 vehicles in DB</span>
+          <button class="btn-xs" id="btnEmptyDb">Clear All</button>
         </div>
         <table class="data-table">
           <thead>
             <tr>
-              <th>Slot</th>
-              <th>Vehicle ID</th>
-              <th>In At</th>
-              <th style="text-align:right;">Action</th>
+              <th>Bay</th>
+              <th>Vehicle</th>
+              <th>Parked</th>
+              <th style="text-align:right;">Remove</th>
             </tr>
           </thead>
           <tbody id="dbBody"></tbody>
         </table>
       </div>
 
-      <div class="tab-pane" id="tabAudit">
+      <!-- FULL AUDIT LOG -->
+      <div class="pane" id="paneAudit">
         <table class="data-table">
           <thead>
             <tr>
               <th>Time</th>
               <th>Event</th>
-              <th>Evidence &amp; Ruled Out</th>
-              <th>Outcome</th>
+              <th>Why / Ruled Out</th>
+              <th>Result</th>
             </tr>
           </thead>
           <tbody id="auditBody"></tbody>
         </table>
       </div>
-
-      <div class="tab-pane" id="tabSign"></div>
     </div>
   </aside>
 </div>
@@ -940,39 +848,16 @@
   'use strict';
 
   const SVG_NS = 'http://www.w3.org/2000/svg';
-  const DB_KEY = 'campusflow_parking_db_v2';
+  const DB_KEY = 'campusflow_parking_db_v3';
 
-  const CAR_PALETTE = ['#38bdf8', '#60a5fa', '#e2e8f0', '#fbbf24', '#a78bfa', '#34d399'];
-  const BIKE_PALETTE = ['#34d399', '#fb923c', '#f472b6', '#38bdf8', '#facc15'];
+  const CAR_COLORS = ['#38bdf8', '#60a5fa', '#e2e8f0', '#fbbf24', '#a78bfa', '#34d399'];
+  const BIKE_COLORS = ['#34d399', '#fb923c', '#f472b6', '#38bdf8', '#facc15'];
 
-  /* =========================================================
-     1. 3 VISION CAMERAS & CALIBRATED FLOORPLAN SLOTS (1264x848)
-     ========================================================= */
+  /* ================= 3 CAMERAS & SLOTS ================= */
   const CAMERAS = [
-    {
-      id: 'CAM-1',
-      name: 'Main Gate Camera',
-      zone: 'GATE',
-      x: 633, y: 696,
-      fovAngle: 90, fovSpan: 76, fovLen: 88,
-      role: 'Entry (left) & Exit (right) synthetic timestamp + class detection'
-    },
-    {
-      id: 'CAM-2',
-      name: 'Car Lot Camera',
-      zone: 'ZONE_CAR',
-      x: 748, y: 498,
-      fovAngle: -28, fovSpan: 64, fovLen: 125,
-      role: 'Verifies bay occupancy across 30 car slots (incl. 2 ♿ bays)'
-    },
-    {
-      id: 'CAM-3',
-      name: 'Bike Lot Camera',
-      zone: 'ZONE_BIKE_1',
-      x: 356, y: 568,
-      fovAngle: -118, fovSpan: 64, fovLen: 120,
-      role: 'Monitors 64 primary two-wheeler bays & triggers Zone 2 redirect'
-    }
+    { id: 'CAM-1', name: 'Main Gate Camera', x: 633, y: 696, fovAngle: 90, fovSpan: 76, fovLen: 88, role: 'Reads left Entry & right Exit lanes' },
+    { id: 'CAM-2', name: 'Car Lot Camera',   x: 748, y: 498, fovAngle: -28, fovSpan: 64, fovLen: 125, role: 'Verifies 30 car bays & commits DB' },
+    { id: 'CAM-3', name: 'Bike Lot Camera',  x: 356, y: 568, fovAngle: -118, fovSpan: 64, fovLen: 120, role: 'Verifies 64 bike bays & triggers Zone 2' }
   ];
 
   const CAR_Y_LINES = [233, 261, 288, 315, 342, 369, 396, 424, 452, 479, 506];
@@ -980,137 +865,91 @@
   function buildSlots() {
     const slots = [];
 
-    // 1) ZONE_CAR: 3 parallel vertical columns x 10 = 30 slots (2 accessible near throat)
+    // 30 Car slots (3 vertical columns x 10, bottom 2 nearest entry are accessible)
     const carCols = [
-      { colIdx: 0, prefix: 'C-A', x: 855, w: 41, aisleX: 920, parkAngle: 180 },
-      { colIdx: 1, prefix: 'C-B', x: 944, w: 41, aisleX: 920, parkAngle: 0 },
-      { colIdx: 2, prefix: 'C-C', x: 991, w: 41, aisleX: 1056, parkAngle: 180 },
+      { colIdx: 0, prefix: 'C-A', x: 855, w: 41, parkAngle: 180 },
+      { colIdx: 1, prefix: 'C-B', x: 944, w: 41, parkAngle: 0 },
+      { colIdx: 2, prefix: 'C-C', x: 991, w: 41, parkAngle: 180 }
     ];
     carCols.forEach(c => {
       for (let i = 0; i < 10; i++) {
         const y0 = CAR_Y_LINES[i] + 2;
         const h = (CAR_Y_LINES[i + 1] - CAR_Y_LINES[i]) - 4;
-        const isAccessible = (c.colIdx === 0 && i >= 8);
         slots.push({
           id: `${c.prefix}${String(i + 1).padStart(2, '0')}`,
           zone: 'ZONE_CAR',
           vehicleType: 'CAR',
-          accessible: isAccessible,
+          accessible: (c.colIdx === 0 && i >= 8),
           x: c.x, y: y0, w: c.w, h,
-          cx: c.x + c.w / 2,
-          cy: y0 + h / 2,
-          angle: 0,
-          parkAngle: c.parkAngle,
-          colIdx: c.colIdx,
-          status: 'AVAILABLE', // AVAILABLE | INBOUND | OCCUPIED | LOCKED
-          vehicleId: null,
-          vehicleColor: null,
-          parkedAt: null
+          cx: c.x + c.w / 2, cy: y0 + h / 2,
+          angle: 0, parkAngle: c.parkAngle, colIdx: c.colIdx,
+          status: 'AVAILABLE', vehicleId: null, vehicleColor: null, parkedAt: null
         });
       }
     });
 
-    // 2) ZONE_BIKE_1: 64 primary bike slots along left red-paved lot + lower-left bend
+    // 64 Primary Bike slots along left red-paved lot + bend
     let b1 = 1;
-    const addBike1 = (cx, cy, angle, aisleType) => {
+    const addB1 = (cx, cy, angle, aisleType) => {
       slots.push({
         id: `B1-${String(b1++).padStart(2, '0')}`,
         zone: 'ZONE_BIKE_1',
         vehicleType: 'BIKE',
         accessible: false,
         x: cx - 10, y: cy - 6, w: 20, h: 12,
-        cx, cy,
-        angle,
-        parkAngle: angle,
-        aisleType,
-        status: 'AVAILABLE',
-        vehicleId: null,
-        vehicleColor: null,
-        parkedAt: null
+        cx, cy, angle, parkAngle: angle, aisleType,
+        status: 'AVAILABLE', vehicleId: null, vehicleColor: null, parkedAt: null
       });
     };
-
-    for (let i = 0; i < 20; i++) {
-      const y = 192 + i * 23.0;
-      const x = 264 - 0.214 * (y - 192);
-      addBike1(x, y, 12, 'WEST_MAIN');
-    }
-    for (let i = 0; i < 10; i++) {
-      const y = 418 + i * 17.5;
-      const x = 261 - 0.138 * (y - 418);
-      addBike1(x, y, 10, 'WEST_MAIN');
-    }
-    for (let i = 0; i < 20; i++) {
-      const y = 196 + i * 19.9;
-      const x = 339 - 0.095 * (y - 196);
-      addBike1(x, y, 186, 'EAST_MAIN');
-    }
-    const bendCoords = [
+    for (let i = 0; i < 20; i++) { const y = 192 + i * 23.0; addB1(264 - 0.214 * (y - 192), y, 12, 'WEST'); }
+    for (let i = 0; i < 10; i++) { const y = 418 + i * 17.5; addB1(261 - 0.138 * (y - 418), y, 10, 'WEST'); }
+    for (let i = 0; i < 20; i++) { const y = 196 + i * 19.9; addB1(339 - 0.095 * (y - 196), y, 186, 'EAST'); }
+    [
       [242, 640, 195], [234, 660, 208], [224, 680, 224], [208, 696, 245],
       [186, 706, 265], [164, 710, 270], [142, 711, 270], [120, 712, 270],
       [98,  713, 270], [76,  714, 270], [54,  715, 270], [32,  716, 270],
       [12,  717, 270], [174, 636, 12]
-    ];
-    bendCoords.forEach(([x, y, ang]) => addBike1(x, y, ang, 'BEND'));
+    ].forEach(([x, y, ang]) => addB1(x, y, ang, 'BEND'));
 
-    // 3) ZONE_BIKE_2: 18 secondary bike slots along bottom-right & east building perimeter
-    const b2Points = [
+    // 18 Secondary Bike slots along right/east perimeter
+    [
       [810, 566, 17], [838, 574, 17], [866, 583, 17], [894, 591, 17],
       [922, 600, 17], [950, 608, 17], [978, 617, 17], [1006, 625, 17],
       [1034, 634, 17], [1062, 642, 17], [1090, 649, 14], [1118, 654, 4],
       [1148, 650, -22], [1168, 632, -62], [1178, 602, -74], [1186, 572, -74],
       [1194, 542, -74], [1202, 512, -74]
-    ];
-    b2Points.forEach(([cx, cy, ang], idx) => {
+    ].forEach(([cx, cy, ang], idx) => {
       slots.push({
         id: `B2-${String(idx + 1).padStart(2, '0')}`,
         zone: 'ZONE_BIKE_2',
         vehicleType: 'BIKE',
         accessible: false,
         x: cx - 10, y: cy - 6, w: 20, h: 12,
-        cx, cy,
-        angle: ang,
-        parkAngle: ang,
-        status: 'LOCKED',
-        vehicleId: null,
-        vehicleColor: null,
-        parkedAt: null
+        cx, cy, angle: ang, parkAngle: ang,
+        status: 'LOCKED', vehicleId: null, vehicleColor: null, parkedAt: null
       });
     });
 
     return slots;
   }
 
-  /* =========================================================
-     2. SWITCHED ENTRY (LEFT) & EXIT (RIGHT) + OVERFLOW RIGHT-TURN
-     ========================================================= */
-  // ENTRY is now on the LEFT lane (x = 598, going NORTH)
+  /* ================= ROUTES (LEFT = ENTRY, RIGHT = EXIT) ================= */
   const ENTRY_TO_JUNCTION = [
     { x: 598, y: 834 },
     { x: 598, y: 706, camId: 'CAM-1' },
-    { x: 608, y: 556, pauseMs: 380 } // Pause to read SIGN_JUNCTION
+    { x: 608, y: 556, pauseMs: 320 }
   ];
-
-  // EXIT is now on the RIGHT lane (x = 666, going SOUTH)
   const EXIT_FROM_JUNCTION = [
     { x: 662, y: 566 },
     { x: 666, y: 706, camId: 'CAM-1' },
     { x: 666, y: 838 }
   ];
 
-  // OVERFLOW PATH: Straight north past crosswalk, then RIGHT TURN ahead along curved upper road!
-  function getOverflowPath(fromPoint = null) {
-    const start = fromPoint
-      ? [{ x: fromPoint.x, y: fromPoint.y }]
-      : ENTRY_TO_JUNCTION.map(p => ({ ...p }));
+  function getOverflowPath(fromPt = null) {
+    const start = fromPt ? [{ x: fromPt.x, y: fromPt.y }] : ENTRY_TO_JUNCTION.map(p => ({ ...p }));
     return start.concat([
-      { x: 614, y: 360 },
-      { x: 614, y: 120 },
-      { x: 614, y: 52 },
-      { x: 715, y: 48 },
-      { x: 815, y: 42 },
-      { x: 910, y: 26 },
-      { x: 1015, y: -12 }
+      { x: 614, y: 360 }, { x: 614, y: 120 }, { x: 614, y: 52 },
+      { x: 715, y: 48 }, { x: 815, y: 42 }, { x: 910, y: 26 }, { x: 1015, y: -12 }
     ]);
   }
 
@@ -1130,8 +969,8 @@
         if (slot.cx < 200) pts.push({ x: 208, y: 676 }, { x: 168, y: 694 }, { x: slot.cx, y: 696 });
         pts.push({ x: slot.cx, y: slot.cy });
       } else {
-        const laneXAtY = (y) => 296 - 0.175 * (y - 195);
-        pts.push({ x: laneXAtY(595), y: 595 }, { x: laneXAtY(slot.cy), y: slot.cy }, { x: slot.cx, y: slot.cy });
+        const lx = y => 296 - 0.175 * (y - 195);
+        pts.push({ x: lx(595), y: 595 }, { x: lx(slot.cy), y: slot.cy }, { x: slot.cx, y: slot.cy });
       }
     } else if (slot.zone === 'ZONE_BIKE_2') {
       pts.push({ x: 690, y: 534 }, { x: 752, y: 526, camId: 'CAM-2' }, { x: 778, y: 548 });
@@ -1162,8 +1001,8 @@
         if (slot.cx < 200) pts.push({ x: slot.cx, y: 696 }, { x: 168, y: 694 }, { x: 208, y: 676 });
         pts.push({ x: 245, y: 626 }, { x: 278, y: 608 });
       } else {
-        const laneXAtY = (y) => 296 - 0.175 * (y - 195);
-        pts.push({ x: laneXAtY(slot.cy), y: slot.cy }, { x: laneXAtY(595), y: 595 }, { x: 278, y: 608 });
+        const lx = y => 296 - 0.175 * (y - 195);
+        pts.push({ x: lx(slot.cy), y: slot.cy }, { x: lx(595), y: 595 }, { x: 278, y: 608 });
       }
       pts.push({ x: 380, y: 598, camId: 'CAM-3' }, { x: 540, y: 582 }, { x: 626, y: 580 });
     } else if (slot.zone === 'ZONE_BIKE_2') {
@@ -1172,87 +1011,73 @@
         { x: 1154, y: 648 }, { x: 1120, y: 654 }, { x: 1062, y: 642 },
         { x: 978, y: 617 }, { x: 894, y: 591 }, { x: 810, y: 566 }
       ];
-      let started = false;
+      let on = false;
       for (const wp of rev) {
-        if (!started && Math.hypot(wp.x - slot.cx, wp.y - slot.cy) < 75) started = true;
-        if (started) pts.push(wp);
+        if (!on && Math.hypot(wp.x - slot.cx, wp.y - slot.cy) < 75) on = true;
+        if (on) pts.push(wp);
       }
       pts.push({ x: 778, y: 548 }, { x: 752, y: 526, camId: 'CAM-2' }, { x: 695, y: 542 });
     }
     return pts.concat(EXIT_FROM_JUNCTION.map(p => ({ ...p })));
   }
 
-  /* =========================================================
-     3. STATE + PERSISTENT LOCAL DATABASE (localStorage)
-     ========================================================= */
+  /* ================= PERSISTENT STATE ================= */
   const state = {
     slots: buildSlots(),
     vehicles: [],
-    parkedDb: new Map(), // vehicleId -> { slotId, zone, vehicleType, color, parkedAt }
+    parkedDb: new Map(),
     overflowRoutedCount: 0,
     overflowApproved: false,
-    pendingApproval: null, // { vehicleId, color, queuedVehicle }
+    pendingApproval: null,
     bike2Active: false,
-    camFlash: {}, // camId -> expireTs
+    camFlash: {},
     simSeconds: 14 * 3600,
     paused: false,
-    speed: 1,
+    speed: 1.5,
     carSeq: 101,
     bikeSeq: 401,
-    signText: '',
-    signHistory: [],
-    agentFeed: [],
     auditLog: [],
-    stepMode: false,
-    stepQueue: [],
-    autoTimer: null
+    demoTimers: []
   };
 
   function saveDb() {
     try {
-      const payload = {
+      localStorage.setItem(DB_KEY, JSON.stringify({
         simSeconds: state.simSeconds,
         carSeq: state.carSeq,
         bikeSeq: state.bikeSeq,
         overflowRoutedCount: state.overflowRoutedCount,
         overflowApproved: state.overflowApproved,
         parked: Array.from(state.parkedDb.entries())
-      };
-      localStorage.setItem(DB_KEY, JSON.stringify(payload));
-      document.getElementById('dbSavedBadge').textContent = `DB · ${state.parkedDb.size} stored`;
-    } catch (_) {
-      document.getElementById('dbSavedBadge').textContent = `RAM · ${state.parkedDb.size} stored`;
-    }
+      }));
+    } catch (_) {}
   }
 
   function loadDb() {
     try {
       const raw = localStorage.getItem(DB_KEY);
       if (!raw) return false;
-      const data = JSON.parse(raw);
-      if (!Array.isArray(data.parked)) return false;
+      const d = JSON.parse(raw);
+      if (!Array.isArray(d.parked)) return false;
       state.slots = buildSlots();
       state.parkedDb.clear();
-      state.simSeconds = data.simSeconds || 14 * 3600;
-      state.carSeq = data.carSeq || 101;
-      state.bikeSeq = data.bikeSeq || 401;
-      state.overflowRoutedCount = data.overflowRoutedCount || 0;
-      state.overflowApproved = !!data.overflowApproved;
-
-      data.parked.forEach(([vehId, rec]) => {
-        const slot = state.slots.find(s => s.id === rec.slotId);
-        if (slot) {
-          slot.status = 'OCCUPIED';
-          slot.vehicleId = vehId;
-          slot.vehicleColor = rec.color || (slot.vehicleType === 'CAR' ? '#38bdf8' : '#34d399');
-          slot.parkedAt = rec.parkedAt || '14:00:00';
-          state.parkedDb.set(vehId, rec);
+      state.simSeconds = d.simSeconds || 14 * 3600;
+      state.carSeq = d.carSeq || 101;
+      state.bikeSeq = d.bikeSeq || 401;
+      state.overflowRoutedCount = d.overflowRoutedCount || 0;
+      state.overflowApproved = !!d.overflowApproved;
+      d.parked.forEach(([id, rec]) => {
+        const s = state.slots.find(x => x.id === rec.slotId);
+        if (s) {
+          s.status = 'OCCUPIED';
+          s.vehicleId = id;
+          s.vehicleColor = rec.color;
+          s.parkedAt = rec.parkedAt;
+          state.parkedDb.set(id, rec);
         }
       });
       return true;
-    } catch (_) {
-      return false;
-    }
+    } catch (_) { return false; }
   }
 
   function fmtTime(sec = state.simSeconds) {
@@ -1261,619 +1086,387 @@
       .map(n => String(n).padStart(2, '0')).join(':');
   }
 
-  function getZoneSlots(zone) {
-    return state.slots.filter(s => s.zone === zone);
-  }
-
   function zoneStats(zone) {
-    const list = getZoneSlots(zone);
+    const list = state.slots.filter(s => s.zone === zone);
     const occupied = list.filter(s => s.status === 'OCCUPIED').length;
-    const inbound = list.filter(s => s.status === 'INBOUND').length;
     const avail = list.filter(s => s.status === 'AVAILABLE').length;
-    return { total: list.length, occupied, inbound, avail, effectiveUsed: occupied + inbound, list };
+    return { total: list.length, occupied, avail, list };
   }
 
-  function flashCamera(camId) {
-    state.camFlash[camId] = performance.now() + 900;
+  /* ================= STORY CAPTION + 4-STEP AI LOOP ================= */
+  function setStory(text, tone = '') {
+    const pill = document.getElementById('storyPill');
+    pill.className = 'story-pill' + (tone ? ` ${tone}` : '');
+    document.getElementById('storyText').textContent = text;
+  }
+
+  function setAiLoop({ sense, think, act, explain, guard = false }) {
+    document.getElementById('timeSense').textContent = fmtTime();
+    document.getElementById('txtSense').textContent = sense;
+    document.getElementById('txtThink').textContent = think;
+    document.getElementById('txtAct').textContent = act;
+    document.getElementById('txtExplain').textContent = explain;
+    document.getElementById('stepAct').className = guard ? 'loop-step s-guard' : 'loop-step s-act';
+  }
+
+  function addAudit(event, why, result, cls = 'ok') {
+    state.auditLog.unshift({ time: fmtTime(), event, why, result, cls });
+    document.getElementById('auditCount').textContent = state.auditLog.length;
+    renderAudit();
+  }
+
+  function toast(msg, type = 'info') {
+    const wrap = document.getElementById('toastWrap');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => el.classList.add('leaving'), 2900);
+    setTimeout(() => el.remove(), 3100);
+  }
+
+  function flashCam(id) {
+    state.camFlash[id] = performance.now() + 850;
     renderCameras();
   }
 
-  /* =========================================================
-     4. LOGGING, TOASTS & SIGN_JUNCTION STATE MACHINE
-     ========================================================= */
-  function showToast(msg, type = 'info') {
-    const wrap = document.getElementById('toastWrap');
-    const div = document.createElement('div');
-    div.className = `toast ${type}`;
-    div.textContent = msg;
-    wrap.appendChild(div);
-    setTimeout(() => div.classList.add('leaving'), 3300);
-    setTimeout(() => div.remove(), 3500);
-  }
-
-  function addAgentStep(phase, title, detail, sub = '') {
-    state.agentFeed.unshift({ time: fmtTime(), phase, title, detail, sub });
-    if (state.agentFeed.length > 60) state.agentFeed.pop();
-    renderAgentFeed();
-  }
-
-  function addAudit({ eventId, evidence, ruledOut, outcome, outcomeType = 'ok' }) {
-    state.auditLog.unshift({ time: fmtTime(), eventId, evidence, ruledOut, outcome, outcomeType });
-    document.getElementById('auditCount').textContent = state.auditLog.length;
-    renderAuditTable();
-  }
-
-  function updateSignJunction(reason = 'Capacity check') {
+  /* ================= SIGN_JUNCTION SYNC ================= */
+  function updateSignJunction() {
     const car = zoneStats('ZONE_CAR');
     const b1 = zoneStats('ZONE_BIKE_1');
+    const b1Full = b1.avail === 0;
+    const carFull = car.avail === 0;
 
-    const b1Full = (b1.avail === 0);
-    const carFull = (car.avail === 0);
+    if (!carFull && state.overflowApproved) state.overflowApproved = false;
 
-    // If Car Lot frees up below 30, clear overflow redirect automatically
-    if (!carFull && state.overflowApproved) {
-      state.overflowApproved = false;
-    }
-
-    // Strict routing rule: Bike Zone 2 activates ONLY when Bike Lot 1 is 100% full
     if (b1Full && !state.bike2Active) {
       state.bike2Active = true;
-      getZoneSlots('ZONE_BIKE_2').forEach(s => { if (s.status === 'LOCKED') s.status = 'AVAILABLE'; });
+      state.slots.filter(s => s.zone === 'ZONE_BIKE_2').forEach(s => { if (s.status === 'LOCKED') s.status = 'AVAILABLE'; });
     } else if (!b1Full && state.bike2Active) {
       state.bike2Active = false;
-      getZoneSlots('ZONE_BIKE_2').forEach(s => { if (s.status === 'AVAILABLE') s.status = 'LOCKED'; });
+      state.slots.filter(s => s.zone === 'ZONE_BIKE_2').forEach(s => { if (s.status === 'AVAILABLE') s.status = 'LOCKED'; });
     }
 
-    let fullMsg = '', line1 = '', line2 = '', mode = 'NORMAL';
+    let l1 = 'BIKE LOT 1: OPEN (LEFT)';
+    let l2 = 'CAR LOT: OPEN (RIGHT)';
+    let col = '#4ade80', stroke = '#38bdf8';
 
     if (b1Full && carFull && state.overflowApproved) {
-      fullMsg = 'BIKE LOT 1: FULL → BIKE ZONE 2 (RIGHT) | CAR LOT: FULL → OVERFLOW AHEAD & RIGHT';
-      line1 = 'BIKE 1: FULL → ZONE 2 (RIGHT)';
-      line2 = 'CAR: FULL → OVERFLOW AHEAD ↗';
-      mode = 'REDIRECT';
+      l1 = 'BIKE 1: FULL → ZONE 2 (RIGHT)';
+      l2 = 'CAR: FULL → OVERFLOW AHEAD ↗';
+      col = '#fbbf24'; stroke = '#f59e0b';
     } else if (b1Full) {
-      fullMsg = 'BIKE LOT 1: FULL → USE BIKE ZONE 2 (RIGHT PERIMETER PATH)';
-      line1 = 'BIKE LOT 1: FULL → BIKE ZONE 2';
-      line2 = '(RIGHT PERIMETER) | CAR: OPEN';
-      mode = 'REDIRECT';
+      l1 = 'BIKE LOT 1: FULL → BIKE ZONE 2';
+      l2 = '(RIGHT PERIMETER) | CAR: OPEN';
+      col = '#fbbf24'; stroke = '#f59e0b';
     } else if (carFull && state.overflowApproved) {
-      fullMsg = 'CAR LOT: FULL → OVERFLOW STRAIGHT AHEAD & TURN RIGHT';
-      line1 = 'CAR LOT: FULL → OVERFLOW';
-      line2 = 'STRAIGHT AHEAD → TURN RIGHT ↗';
-      mode = 'REDIRECT';
+      l1 = 'CAR LOT: FULL → OVERFLOW';
+      l2 = 'STRAIGHT AHEAD → TURN RIGHT ↗';
+      col = '#fbbf24'; stroke = '#f59e0b';
     } else if (carFull && state.pendingApproval) {
-      fullMsg = 'CAR LOT: FULL — AWAITING ATTENDANT OVERFLOW APPROVAL | BIKE LOT 1: OPEN';
-      line1 = 'CAR LOT: FULL (PENDING APPROVAL)';
-      line2 = 'BIKE LOT 1: OPEN (LEFT)';
-      mode = 'ALERT';
+      l1 = 'CAR LOT: FULL (AWAITING OK)';
+      l2 = 'BIKE LOT 1: OPEN (LEFT)';
+      col = '#f87171'; stroke = '#ef4444';
     } else if (carFull) {
-      fullMsg = 'CAR LOT: FULL (OVERFLOW READY) | BIKE LOT 1: OPEN (LEFT)';
-      line1 = 'CAR LOT: FULL (HOLD / OVERFLOW)';
-      line2 = 'BIKE LOT 1: OPEN (LEFT)';
-      mode = 'ALERT';
-    } else {
-      fullMsg = 'BIKE LOT 1: OPEN (LEFT) | CAR LOT: OPEN (RIGHT)';
-      line1 = 'BIKE LOT 1: OPEN (LEFT)';
-      line2 = 'CAR LOT: OPEN (RIGHT)';
-      mode = 'NORMAL';
+      l1 = 'CAR LOT: FULL';
+      l2 = 'BIKE LOT 1: OPEN (LEFT)';
+      col = '#f87171'; stroke = '#ef4444';
     }
 
-    const changed = (fullMsg !== state.signText);
-    state.signText = fullMsg;
-
-    const color = mode === 'NORMAL' ? '#4ade80' : (mode === 'REDIRECT' ? '#fbbf24' : '#f87171');
-    const stroke = mode === 'NORMAL' ? '#38bdf8' : (mode === 'REDIRECT' ? '#f59e0b' : '#ef4444');
-    document.getElementById('signLine1').textContent = line1;
-    document.getElementById('signLine2').textContent = line2;
-    document.getElementById('signLine1').setAttribute('fill', color);
-    document.getElementById('signLine2').setAttribute('fill', color);
+    document.getElementById('signLine1').textContent = l1;
+    document.getElementById('signLine2').textContent = l2;
+    document.getElementById('signLine1').setAttribute('fill', col);
+    document.getElementById('signLine2').setAttribute('fill', col);
     document.getElementById('signBox').setAttribute('stroke', stroke);
-    document.getElementById('signLedDot').setAttribute('fill', color);
+    document.getElementById('signLedDot').setAttribute('fill', col);
 
-    const mirror = document.getElementById('signMirrorText');
-    mirror.textContent = fullMsg;
-    mirror.className = 'sign-strip-val' + (mode === 'REDIRECT' ? ' redirect' : (mode === 'ALERT' ? ' alert' : ''));
-    const pill = document.getElementById('signStatePill');
-    pill.textContent = mode;
-    pill.style.color = color;
-
-    if (changed || state.signHistory.length === 0) {
-      state.signHistory.unshift({ time: fmtTime(), text: fullMsg, mode, reason });
-      document.getElementById('signCount').textContent = state.signHistory.length;
-      renderSignHistory();
-    }
-    renderActiveRoutes();
+    renderRoutes();
   }
 
-  /* =========================================================
-     5. REAL DB-BACKED ARRIVAL, PARKING & REMOVAL ENGINE
-     ========================================================= */
-  function commitVehicleToSlot(vehId, slot, color) {
+  /* ================= CORE DB-BACKED PARKING ACTIONS ================= */
+  function commitPark(vehId, slot, color) {
     const ts = fmtTime();
     slot.status = 'OCCUPIED';
     slot.vehicleId = vehId;
     slot.vehicleColor = color;
     slot.parkedAt = ts;
-
-    state.parkedDb.set(vehId, {
-      slotId: slot.id,
-      zone: slot.zone,
-      vehicleType: slot.vehicleType,
-      color,
-      parkedAt: ts
-    });
-
-    flashCamera(slot.zone === 'ZONE_CAR' ? 'CAM-2' : 'CAM-3');
+    state.parkedDb.set(vehId, { slotId: slot.id, zone: slot.zone, vehicleType: slot.vehicleType, color, parkedAt: ts });
+    flashCam(slot.zone === 'ZONE_CAR' ? 'CAM-2' : 'CAM-3');
     saveDb();
-    updateSignJunction(`Committed ${vehId} into ${slot.id}`);
+    updateSignJunction();
     renderSlots();
-    renderDbTable();
-    updateHUD();
+    renderDb();
+    updateStats();
   }
 
-  function spawnTransitVehicle({ id, type, color, path, targetSlot, mode, onArrive }) {
-    const v = {
-      id,
-      type,
-      color,
-      path,
-      segIdx: 0,
-      segT: 0,
-      x: path[0].x,
-      y: path[0].y,
-      angle: -90,
-      pauseLeft: 0,
-      targetSlot,
-      mode, // 'ARRIVE' | 'EXIT' | 'HOLD' | 'OVERFLOW'
-      onArrive
-    };
+  function spawnVehicle({ id, type, color, path, mode, onArrive }) {
+    const v = { id, type, color, path, segIdx: 0, segT: 0, x: path[0].x, y: path[0].y, angle: -90, pauseLeft: 0, mode, onArrive };
     state.vehicles.push(v);
-    updateHUD();
     return v;
   }
 
-  function handleCarArrival(customId = null) {
-    const vehId = customId || `CAR-${state.carSeq++}`;
-    const color = CAR_PALETTE[(state.carSeq + Math.floor(Math.random() * 6)) % CAR_PALETTE.length];
+  function addCar(customId = null) {
+    const id = customId || `CAR-${state.carSeq++}`;
+    const color = CAR_COLORS[state.carSeq % CAR_COLORS.length];
 
-    // Duplicate entry guard
-    if (state.parkedDb.has(vehId) || state.vehicles.some(v => v.id === vehId)) {
-      flashCamera('CAM-1');
-      addAgentStep('GUARD', `Duplicate Entry Rejected · ${vehId}`,
-        `CAM-1 scanned ${vehId}, which already exists in the live parking DB. Rejected to prevent double allocation.`,
-        'Rule: Active synthetic vehicle ID must be unique');
-      addAudit({
-        eventId: `DUP · ${vehId}`,
-        evidence: 'CAM-1 match in live DB',
-        ruledOut: 'Double slot write blocked',
-        outcome: 'REJECTED',
-        outcomeType: 'rej'
+    if (state.parkedDb.has(id) || state.vehicles.some(v => v.id === id)) {
+      flashCam('CAM-1');
+      setStory(`Duplicate blocked — ${id} is already parked in the DB.`, 'alert');
+      setAiLoop({
+        sense: `Gate camera (CAM-1) scanned ${id} entering left lane.`,
+        think: `Hard rule triggered: ${id} is already active in the live parking database.`,
+        act: `Blocked duplicate entry — no second bay allocated.`,
+        explain: `Capacity count protected against scanner bounce or duplicate read.`,
+        guard: true
       });
-      showToast(`Duplicate scan blocked for ${vehId}`, 'err');
+      addAudit(`DUP · ${id}`, 'Already active in DB', 'Blocked', 'rej');
+      toast(`Duplicate scan blocked for ${id}`, 'err');
       return;
     }
 
-    flashCamera('CAM-1');
-    const carStats = zoneStats('ZONE_CAR');
-    const standardOpen = carStats.list.filter(s => s.status === 'AVAILABLE' && !s.accessible);
-    const accessibleOpen = carStats.list.filter(s => s.status === 'AVAILABLE' && s.accessible);
-    const chosen = standardOpen[0] || accessibleOpen[0] || null;
-
-    addAgentStep('SENSE', `CAM-1 Main Gate Entry · ${vehId}`,
-      `Car entered via left gate lane. Live DB reports Car Lot ${carStats.occupied}/${carStats.total} parked (${carStats.inbound} inbound).`);
+    flashCam('CAM-1');
+    const car = zoneStats('ZONE_CAR');
+    const std = car.list.filter(s => s.status === 'AVAILABLE' && !s.accessible);
+    const acc = car.list.filter(s => s.status === 'AVAILABLE' && s.accessible);
+    const chosen = std[0] || acc[0] || null;
 
     if (chosen) {
-      // Reserve as INBOUND while driving; commit to DB & stay visibly parked on arrival!
       chosen.status = 'INBOUND';
-      chosen.vehicleId = vehId;
+      chosen.vehicleId = id;
       chosen.vehicleColor = color;
+      setStory(`${id} entering → routed right to Car bay ${chosen.id}.`);
+      setAiLoop({
+        sense: `CAM-1 detected ${id} at left Entry gate. Car lot has ${car.avail} open bay(s).`,
+        think: `Normal car bay available (${chosen.id}). Preserved ♿ bays first; overflow not needed.`,
+        act: `Reserved ${chosen.id} and guided ${id} right into Car Lot.`,
+        explain: `Waiting for CAM-2 arrival confirmation to commit ${chosen.id} to DB.`
+      });
 
-      addAgentStep('THINK', `Bay ${chosen.id} Reserved (Inbound)`,
-        `Car Lot has open capacity. Dispatched ${vehId} right at SIGN_JUNCTION → CAM-2 will commit ${chosen.id} to DB on arrival.`,
-        'Ruled out: External Overflow (primary lot open)');
-
-      spawnTransitVehicle({
-        id: vehId,
-        type: 'CAR',
-        color,
-        path: getEntryPath(chosen),
-        targetSlot: chosen,
-        mode: 'ARRIVE',
+      spawnVehicle({
+        id, type: 'CAR', color, path: getEntryPath(chosen), mode: 'ARRIVE',
         onArrive: () => {
-          commitVehicleToSlot(vehId, chosen, color);
-          addAgentStep('EXPLAIN', `DB Committed · ${vehId} Parked in ${chosen.id}`,
-            `CAM-2 verified ${vehId} seated in ${chosen.id}. Record written to persistent DB; bay now occupied.`);
-          addAudit({
-            eventId: `PARK · ${vehId}`,
-            evidence: `CAM-1 + CAM-2 verified ${chosen.id}`,
-            ruledOut: 'Overflow (not required)',
-            outcome: `Stored ${chosen.id}`,
-            outcomeType: 'ok'
+          commitPark(id, chosen, color);
+          setAiLoop({
+            sense: `CAM-2 confirmed ${id} parked inside bay ${chosen.id}.`,
+            think: `Bay verified occupied; live DB updated (${zoneStats('ZONE_CAR').occupied}/30).`,
+            act: `Kept ${id} permanently parked in ${chosen.id}.`,
+            explain: `Click ${chosen.id} on the map or click − Car anytime to release this bay.`
           });
+          addAudit(`PARK · ${id}`, `Car lot open → ${chosen.id}`, 'Stored in DB', 'ok');
         }
       });
 
-      updateSignJunction(`Inbound car reserved ${chosen.id}`);
+      updateSignJunction();
       renderSlots();
-      updateHUD();
+      updateStats();
       return;
     }
 
-    // Car Lot is FULL (30/30)
+    // Car Lot FULL (30/30)
     if (state.overflowApproved) {
-      dispatchCarToOverflow(vehId, color, null, 'Pre-Approved Redirect');
+      routeToOverflow(id, color, null, 'Pre-Approved');
       return;
     }
-
     if (state.pendingApproval) {
-      showToast(`Overflow approval already pending for ${state.pendingApproval.vehicleId}.`, 'warn');
+      toast(`Approve or reject ${state.pendingApproval.id} first.`, 'warn');
       return;
     }
 
-    // Hold car at junction & request Parking Attendant approval for Straight-Ahead → Right Overflow
-    const holdPath = [
-      { x: 598, y: 834 },
-      { x: 598, y: 706, camId: 'CAM-1' },
-      { x: 608, y: 568 }
-    ];
-    const queuedVehicle = spawnTransitVehicle({
-      id: vehId,
-      type: 'CAR',
-      color,
-      path: holdPath,
-      targetSlot: null,
-      mode: 'HOLD',
-      onArrive: () => {}
+    const holdPath = [{ x: 598, y: 834 }, { x: 598, y: 706, camId: 'CAM-1' }, { x: 608, y: 568 }];
+    spawnVehicle({ id, type: 'CAR', color, path: holdPath, mode: 'HOLD', onArrive: () => {} });
+    state.pendingApproval = { id, color };
+
+    setStory(`Car Lot FULL (30/30) — waiting for Attendant to approve Overflow for ${id}.`, 'warn');
+    setAiLoop({
+      sense: `CAM-1 scanned ${id}, while Car Lot DB is 30/30 FULL.`,
+      think: `Bike Lot ruled out (wrong vehicle class). External Overflow (straight ahead & right) requires human sign-off.`,
+      act: `Paused ${id} at junction and requested Parking Attendant approval.`,
+      explain: `Click "Approve Overflow ↗" on the right to update SIGN_JUNCTION and dispatch.`
     });
+    addAudit(`OV_REQ · ${id}`, 'Car lot 30/30 full; Bike ruled out', 'Awaiting Approval', 'pend');
 
-    state.pendingApproval = { vehicleId: vehId, color, queuedVehicle };
-
-    addAgentStep('THINK', `Car Lot Full (30/30) — Proposing Overflow Redirect`,
-      `No standard or accessible car bays remain. Proposing to update SIGN_JUNCTION and route ${vehId} straight ahead then right to external overflow.`,
-      'Human-in-the-loop required before opening overflow redirect');
-
-    addAudit({
-      eventId: `OV_REQ · ${vehId}`,
-      evidence: 'Car Lot DB 30/30 full',
-      ruledOut: 'Bike Lot 1 (wrong vehicle class)',
-      outcome: 'PENDING APPROVAL',
-      outcomeType: 'pend'
-    });
-
-    updateSignJunction('Car overflow redirect awaiting attendant approval');
-    renderApprovalCard();
-    updateHUD();
-    showToast(`Attendant approval required: route ${vehId} to Overflow (Ahead → Right)`, 'warn');
+    updateSignJunction();
+    renderApproval();
+    updateStats();
   }
 
-  function dispatchCarToOverflow(vehId, color, fromPoint, approvalNote) {
+  function routeToOverflow(id, color, fromPt, note) {
     state.overflowRoutedCount += 1;
     saveDb();
-
-    addAgentStep('ACT', `Overflow Redirect Active → ${vehId} Straight Ahead & Right`,
-      `SIGN_JUNCTION updated. ${vehId} proceeds straight north past junction and takes the right turn ahead onto the overflow corridor.`);
-
-    spawnTransitVehicle({
-      id: vehId,
-      type: 'CAR',
-      color,
-      path: getOverflowPath(fromPoint),
-      targetSlot: null,
-      mode: 'OVERFLOW',
-      onArrive: () => {
-        addAgentStep('EXPLAIN', `Verified Overflow Exit · ${vehId}`,
-          `${vehId} cleared north-east overflow corridor (${approvalNote}). Total overflow routed: ${state.overflowRoutedCount}.`);
-        updateHUD();
-      }
+    setStory(`Overflow approved — ${id} heading straight ahead & turning right ↗`, 'warn');
+    setAiLoop({
+      sense: `Attendant approved Overflow redirect for ${id}.`,
+      think: `Switching SIGN_JUNCTION so oncoming cars bypass the full right lot.`,
+      act: `Guiding ${id} straight north past crosswalk, then right onto overflow road.`,
+      explain: `Verified ${id} cleared campus bottleneck (${state.overflowRoutedCount} total redirected).`
     });
+    addAudit(`OVERFLOW · ${id}`, `Car lot full (${note})`, 'Sent Ahead → Right', 'ok');
 
-    addAudit({
-      eventId: `OV_ROUTE · ${vehId}`,
-      evidence: `Car Lot 30/30 · ${approvalNote}`,
-      ruledOut: 'Car Lot (full), Bike Lot (class)',
-      outcome: 'Routed Ahead → Right',
-      outcomeType: 'ok'
+    spawnVehicle({
+      id, type: 'CAR', color, path: getOverflowPath(fromPt), mode: 'OVERFLOW',
+      onArrive: () => updateStats()
     });
-
-    updateSignJunction('Car overflow redirect approved');
-    updateHUD();
+    updateSignJunction();
+    updateStats();
   }
 
-  function approvePendingOverflow() {
+  function approveOverflow() {
     if (!state.pendingApproval) return;
-    const { vehicleId, color } = state.pendingApproval;
+    const { id, color } = state.pendingApproval;
     state.pendingApproval = null;
     state.overflowApproved = true;
-
-    const idx = state.vehicles.findIndex(v => v.id === vehicleId && v.mode === 'HOLD');
-    let fromPt = { x: 608, y: 556 };
-    if (idx >= 0) {
-      fromPt = { x: state.vehicles[idx].x, y: state.vehicles[idx].y };
-      state.vehicles.splice(idx, 1);
-    }
-
-    renderApprovalCard();
-    dispatchCarToOverflow(vehicleId, color, fromPt, 'Attendant Approved');
-    showToast(`Approved! ${vehicleId} routing straight ahead → right turn to Overflow.`, 'ok');
+    const idx = state.vehicles.findIndex(v => v.id === id && v.mode === 'HOLD');
+    let pt = { x: 608, y: 556 };
+    if (idx >= 0) { pt = { x: state.vehicles[idx].x, y: state.vehicles[idx].y }; state.vehicles.splice(idx, 1); }
+    renderApproval();
+    routeToOverflow(id, color, pt, 'Attendant Approved');
+    toast(`Approved — ${id} taking right turn ahead to Overflow.`, 'ok');
   }
 
-  function rejectPendingOverflow() {
+  function rejectOverflow() {
     if (!state.pendingApproval) return;
-    const { vehicleId, color } = state.pendingApproval;
+    const { id, color } = state.pendingApproval;
     state.pendingApproval = null;
-
-    const idx = state.vehicles.findIndex(v => v.id === vehicleId && v.mode === 'HOLD');
-    let fromPt = { x: 608, y: 568 };
-    if (idx >= 0) {
-      fromPt = { x: state.vehicles[idx].x, y: state.vehicles[idx].y };
-      state.vehicles.splice(idx, 1);
-    }
-
-    spawnTransitVehicle({
-      id: vehicleId,
-      type: 'CAR',
-      color,
-      path: [fromPt, ...EXIT_FROM_JUNCTION.map(p => ({ ...p }))],
-      targetSlot: null,
-      mode: 'EXIT',
-      onArrive: () => {}
+    const idx = state.vehicles.findIndex(v => v.id === id && v.mode === 'HOLD');
+    let pt = { x: 608, y: 568 };
+    if (idx >= 0) { pt = { x: state.vehicles[idx].x, y: state.vehicles[idx].y }; state.vehicles.splice(idx, 1); }
+    spawnVehicle({ id, type: 'CAR', color, path: [pt, ...EXIT_FROM_JUNCTION.map(p => ({ ...p }))], mode: 'EXIT', onArrive: () => {} });
+    setStory(`Overflow rejected — ${id} exiting cleanly via right gate lane.`, 'alert');
+    setAiLoop({
+      sense: `Attendant rejected overflow request for ${id}.`,
+      think: `Policy enforces human override — overflow corridor remains closed.`,
+      act: `Diverted ${id} out through right Exit lane.`,
+      explain: `Zero unauthorized vehicles sent to overflow; decision logged.`
     });
-
-    addAgentStep('EXPLAIN', `Overflow Denied · ${vehicleId} Exited`,
-      `Parking attendant rejected overflow redirect. ${vehicleId} diverted safely through the right exit lane.`);
-    addAudit({
-      eventId: `OV_DENY · ${vehicleId}`,
-      evidence: 'Attendant override: REJECT',
-      ruledOut: 'Overflow corridor closed',
-      outcome: 'Diverted to Exit',
-      outcomeType: 'rej'
-    });
-
-    renderApprovalCard();
-    updateSignJunction('Overflow redirect rejected by attendant');
-    updateHUD();
-    showToast(`Overflow rejected — ${vehicleId} exited via right gate lane.`, 'warn');
+    addAudit(`OV_DENY · ${id}`, 'Attendant rejected overflow', 'Exited Gate', 'rej');
+    renderApproval();
+    updateSignJunction();
+    updateStats();
   }
 
-  function handleBikeArrival(customId = null) {
-    const vehId = customId || `BK-${state.bikeSeq++}`;
-    const color = BIKE_PALETTE[(state.bikeSeq + Math.floor(Math.random() * 5)) % BIKE_PALETTE.length];
+  function addBike(customId = null) {
+    const id = customId || `BK-${state.bikeSeq++}`;
+    const color = BIKE_COLORS[state.bikeSeq % BIKE_COLORS.length];
 
-    if (state.parkedDb.has(vehId) || state.vehicles.some(v => v.id === vehId)) {
-      flashCamera('CAM-1');
-      addAgentStep('GUARD', `Duplicate Bike Scan Rejected · ${vehId}`,
-        `CAM-1 flagged duplicate active ID ${vehId}. Live DB unchanged.`);
-      addAudit({
-        eventId: `DUP · ${vehId}`,
-        evidence: 'CAM-1 active DB match',
-        ruledOut: 'Duplicate write blocked',
-        outcome: 'REJECTED',
-        outcomeType: 'rej'
-      });
-      showToast(`Duplicate scan blocked for ${vehId}`, 'err');
+    if (state.parkedDb.has(id) || state.vehicles.some(v => v.id === id)) {
+      flashCam('CAM-1');
+      setStory(`Duplicate blocked — ${id} is already parked in the DB.`, 'alert');
+      addAudit(`DUP · ${id}`, 'Already active in DB', 'Blocked', 'rej');
+      toast(`Duplicate scan blocked for ${id}`, 'err');
       return;
     }
 
-    flashCamera('CAM-1');
+    flashCam('CAM-1');
     const b1 = zoneStats('ZONE_BIKE_1');
     const openB1 = b1.list.find(s => s.status === 'AVAILABLE');
 
-    addAgentStep('SENSE', `CAM-1 Two-Wheeler Entry · ${vehId}`,
-      `Bike entered left gate lane. Bike Lot 1 DB: ${b1.occupied}/${b1.total} (${b1.inbound} inbound).`);
-
     if (openB1) {
       openB1.status = 'INBOUND';
-      openB1.vehicleId = vehId;
+      openB1.vehicleId = id;
       openB1.vehicleColor = color;
-
-      addAgentStep('THINK', `Assigned Primary Bike Bay ${openB1.id}`,
-        `Hard rule: fill Bike Lot 1 before Bike Zone 2. Directing left onto red path (CAM-3).`,
-        'Ruled out: Bike Zone 2 (primary still open)');
-
-      spawnTransitVehicle({
-        id: vehId,
-        type: 'BIKE',
-        color,
-        path: getEntryPath(openB1),
-        targetSlot: openB1,
-        mode: 'ARRIVE',
+      setStory(`${id} entering → routed left to Main Bike Lot (${openB1.id}).`);
+      setAiLoop({
+        sense: `CAM-1 detected two-wheeler ${id}. Main Bike Lot has ${b1.avail} open spot(s).`,
+        think: `Hard rule: fill Main Bike Lot before activating Bike Zone 2.`,
+        act: `Directed ${id} left onto red-paved lot → bay ${openB1.id}.`,
+        explain: `CAM-3 will verify arrival and commit ${openB1.id} to persistent DB.`
+      });
+      spawnVehicle({
+        id, type: 'BIKE', color, path: getEntryPath(openB1), mode: 'ARRIVE',
         onArrive: () => {
-          commitVehicleToSlot(vehId, openB1, color);
-          addAgentStep('EXPLAIN', `DB Committed · ${vehId} Parked in ${openB1.id}`,
-            `CAM-3 verified ${vehId} parked in ${openB1.id}. Stored persistently.`);
-          addAudit({
-            eventId: `PARK · ${vehId}`,
-            evidence: `CAM-1 + CAM-3 verified ${openB1.id}`,
-            ruledOut: 'Bike Zone 2 (standby)',
-            outcome: `Stored ${openB1.id}`,
-            outcomeType: 'ok'
-          });
+          commitPark(id, openB1, color);
+          addAudit(`PARK · ${id}`, `Main bike lot open → ${openB1.id}`, 'Stored in DB', 'ok');
         }
       });
-
-      updateSignJunction(`Inbound bike reserved ${openB1.id}`);
+      updateSignJunction();
       renderSlots();
-      updateHUD();
+      updateStats();
       return;
     }
 
-    // ZONE_BIKE_1 is 100% FULL -> Auto-activate ZONE_BIKE_2 & switch SIGN_JUNCTION
-    updateSignJunction('Bike Lot 1 at 100% capacity — redirecting to Bike Zone 2');
-    const openB2 = getZoneSlots('ZONE_BIKE_2').find(s => s.status === 'AVAILABLE');
-    if (!openB2) {
-      addAgentStep('GUARD', `All Bike Capacity Full · ${vehId}`,
-        `Both Bike Lot 1 (64/64) and Bike Zone 2 (18/18) are full.`);
-      showToast(`All bike parking full for ${vehId}`, 'err');
-      return;
-    }
+    // Main Bike Lot 100% FULL -> Automatic Bike Zone 2 Redirect!
+    updateSignJunction();
+    const openB2 = state.slots.find(s => s.zone === 'ZONE_BIKE_2' && s.status === 'AVAILABLE');
+    if (!openB2) { toast('Both bike zones are completely full!', 'err'); return; }
 
     openB2.status = 'INBOUND';
-    openB2.vehicleId = vehId;
+    openB2.vehicleId = id;
     openB2.vehicleColor = color;
-
-    addAgentStep('THINK', `Bike Lot 1 Full (64/64) → Redirect to ${openB2.id}`,
-      `Policy triggered: SIGN_JUNCTION updated to route ${vehId} right around car lot perimeter into Bike Zone 2.`,
-      'Ruled out: Bike Lot 1 (full), Car Lot (class mismatch)');
-
-    spawnTransitVehicle({
-      id: vehId,
-      type: 'BIKE',
-      color,
-      path: getEntryPath(openB2),
-      targetSlot: openB2,
-      mode: 'ARRIVE',
-      onArrive: () => {
-        commitVehicleToSlot(vehId, openB2, color);
-        addAgentStep('EXPLAIN', `DB Committed · ${vehId} Parked in ${openB2.id}`,
-          `Perimeter bike parked & persisted in DB (${openB2.id}).`);
-        addAudit({
-          eventId: `REDIR · ${vehId}`,
-          evidence: 'Bike Lot 1 64/64 FULL',
-          ruledOut: 'Bike Lot 1 (full)',
-          outcome: `Stored ${openB2.id}`,
-          outcomeType: 'ok'
-        });
-      }
+    setStory(`Main Bike Lot FULL (64/64) — SIGN_JUNCTION redirected ${id} right around perimeter → ${openB2.id}!`, 'sky');
+    setAiLoop({
+      sense: `CAM-3 reports Main Bike Lot at 64/64 FULL as ${id} arrives.`,
+      think: `Policy triggered: open Bike Zone 2 along east building perimeter (Car lot excluded).`,
+      act: `Switched SIGN_JUNCTION & guided ${id} right around perimeter to ${openB2.id}.`,
+      explain: `Automatic redirect keeps main gate clear; reverts the moment any Main Bike spot frees up.`
     });
 
+    spawnVehicle({
+      id, type: 'BIKE', color, path: getEntryPath(openB2), mode: 'ARRIVE',
+      onArrive: () => {
+        commitPark(id, openB2, color);
+        addAudit(`REDIR · ${id}`, 'Main bike lot 64/64 full', `Zone 2 (${openB2.id})`, 'ok');
+      }
+    });
     renderSlots();
-    updateHUD();
-    showToast(`Bike Lot 1 FULL — SIGN_JUNCTION redirected ${vehId} → ${openB2.id}`, 'ok');
+    updateStats();
   }
 
-  // Dynamic removal of a SPECIFIC vehicle (by clicking map bay, DB Remove button, or -Car / -Bike)
-  function removeVehicleBySlot(slot) {
+  function removeSlotVehicle(slot) {
     if (!slot || slot.status !== 'OCCUPIED' || !slot.vehicleId) return;
-    const vehId = slot.vehicleId;
-    const vehType = slot.vehicleType;
-    const color = slot.vehicleColor || (vehType === 'CAR' ? '#38bdf8' : '#34d399');
+    const id = slot.vehicleId;
+    const type = slot.vehicleType;
+    const color = slot.vehicleColor;
     const prevZone = slot.zone;
 
-    // 1. Delete from live DB & free the slot immediately
-    state.parkedDb.delete(vehId);
+    state.parkedDb.delete(id);
     slot.status = 'AVAILABLE';
     slot.vehicleId = null;
     slot.vehicleColor = null;
     slot.parkedAt = null;
     saveDb();
 
-    addAgentStep('SENSE', `Removal / Exit Triggered · ${vehId} (${slot.id})`,
-      `Removed ${vehId} from DB. Slot ${slot.id} immediately freed (${prevZone}) — vehicle backing out toward right exit gate.`);
-
-    // 2. Animate that exact vehicle leaving through the RIGHT exit lane!
-    spawnTransitVehicle({
-      id: vehId,
-      type: vehType,
-      color,
-      path: getExitPath(slot),
-      targetSlot: null,
-      mode: 'EXIT',
-      onArrive: () => {
-        flashCamera('CAM-1');
-        addAgentStep('EXPLAIN', `CAM-1 Verified Exit · ${vehId}`,
-          `${vehId} cleared right exit gate. ${slot.id} confirmed free in DB.`);
-        updateHUD();
-      }
-    });
-
     const wasBike2 = state.bike2Active;
-    updateSignJunction(`Slot ${slot.id} freed in ${prevZone}`);
-    const revertedBike = wasBike2 && !state.bike2Active;
+    updateSignJunction();
+    const reverted = wasBike2 && !state.bike2Active;
 
-    addAudit({
-      eventId: `EXIT · ${vehId}`,
-      evidence: `Deleted ${vehId} from DB (${slot.id})`,
-      ruledOut: 'Valid active session',
-      outcome: revertedBike ? `Freed ${slot.id} + SIGN reverted` : `Freed ${slot.id}`,
-      outcomeType: 'ok'
+    setStory(reverted
+      ? `${id} exited ${slot.id} — Main Bike Lot open again, SIGN_JUNCTION reverted!`
+      : `${id} removed from DB — bay ${slot.id} is now free.`, '');
+    setAiLoop({
+      sense: `${id} departed bay ${slot.id}.`,
+      think: `Deleted record from live DB and recalculated available bays dynamically.`,
+      act: `Freed ${slot.id} immediately and routed ${id} out right Exit gate.`,
+      explain: reverted ? `Main Bike Lot dropped below 64/64, so SIGN_JUNCTION automatically switched back to normal.` : `Bay ${slot.id} is ready for the next incoming vehicle.`
+    });
+    addAudit(`EXIT · ${id}`, `Removed from ${slot.id}`, reverted ? 'Freed + Sign Reverted' : `Freed ${slot.id}`, 'ok');
+
+    spawnVehicle({
+      id, type, color, path: getExitPath(slot), mode: 'EXIT',
+      onArrive: () => { flashCam('CAM-1'); updateStats(); }
     });
 
     renderSlots();
-    renderDbTable();
-    updateHUD();
-    showToast(revertedBike
-      ? `${vehId} removed — ${slot.id} free & SIGN_JUNCTION reverted to Bike Lot 1!`
-      : `${vehId} removed from DB — slot ${slot.id} is now free.`, 'ok');
+    renderDb();
+    updateStats();
   }
 
-  function removeOneVehicle(typeFilter = null, zoneFilter = null) {
-    let candidates = state.slots.filter(s => s.status === 'OCCUPIED' && s.vehicleId);
-    if (typeFilter) candidates = candidates.filter(s => s.vehicleType === typeFilter);
-    if (zoneFilter) {
-      const zc = candidates.filter(s => s.zone === zoneFilter);
-      if (zc.length) candidates = zc;
+  function removeOne(type, zone = null) {
+    let list = state.slots.filter(s => s.status === 'OCCUPIED' && s.vehicleType === type);
+    if (zone) {
+      const z = list.filter(s => s.zone === zone);
+      if (z.length) list = z;
     }
-    if (!candidates.length) {
-      showToast(`No parked ${typeFilter ? typeFilter.toLowerCase() + 's' : 'vehicles'} in DB to remove.`, 'warn');
-      return;
-    }
-    // Remove most recently parked first so demo feels crisp
-    removeVehicleBySlot(candidates[candidates.length - 1]);
+    if (!list.length) { toast(`No parked ${type.toLowerCase()}s to remove.`, 'warn'); return; }
+    removeSlotVehicle(list[list.length - 1]);
   }
 
-  function simulateDuplicateScan() {
-    const activeIds = Array.from(state.parkedDb.keys());
-    if (activeIds.length > 0) {
-      const dupId = activeIds[activeIds.length - 1];
-      const rec = state.parkedDb.get(dupId);
-      if (rec.vehicleType === 'CAR') handleCarArrival(dupId);
-      else handleBikeArrival(dupId);
-    } else {
-      flashCamera('CAM-1');
-      addAgentStep('GUARD', 'Unknown Exit Scan Rejected · CAR-999',
-        'CAM-1 received an exit scan for CAR-999 with no active DB record. Count protected against underflow.');
-      addAudit({
-        eventId: 'EXIT_ERR · CAR-999',
-        evidence: 'Not found in live DB',
-        ruledOut: 'Capacity underflow blocked',
-        outcome: 'REJECTED',
-        outcomeType: 'rej'
-      });
-      showToast('Unknown exit scan blocked (CAR-999 not in DB).', 'err');
-    }
+  /* ================= 1-2-3 QUICK SHOWCASE DEMOS ================= */
+  function clearDemos() {
+    state.demoTimers.forEach(t => clearTimeout(t));
+    state.demoTimers = [];
   }
 
-  /* =========================================================
-     6. PRESETS, SEEDING & STEP-BY-STEP ENGINE
-     ========================================================= */
-  function clearTimers() {
-    if (state.autoTimer) { clearTimeout(state.autoTimer); state.autoTimer = null; }
-  }
-
-  function setDemandBanner(tag, text, idle = false) {
-    document.getElementById('demandBar').className = idle ? 'demand-bar idle' : 'demand-bar';
-    document.getElementById('demandTag').textContent = tag;
-    document.getElementById('demandText').textContent = text;
-  }
-
-  function seedDbOccupancy({ carCount = 0, bike1Count = 0, includeAccessible = false }) {
-    const carList = getZoneSlots('ZONE_CAR').filter(s => includeAccessible ? true : !s.accessible);
-    for (let i = 0; i < Math.min(carCount, carList.length); i++) {
-      const s = carList[i];
-      const id = `CAR-${200 + i}`;
-      const col = CAR_PALETTE[i % CAR_PALETTE.length];
-      s.status = 'OCCUPIED';
-      s.vehicleId = id;
-      s.vehicleColor = col;
-      s.parkedAt = '13:45:00';
-      state.parkedDb.set(id, { slotId: s.id, zone: s.zone, vehicleType: 'CAR', color: col, parkedAt: s.parkedAt });
-    }
-    const b1List = getZoneSlots('ZONE_BIKE_1');
-    for (let i = 0; i < Math.min(bike1Count, b1List.length); i++) {
-      const s = b1List[i];
-      const id = `BK-${500 + i}`;
-      const col = BIKE_PALETTE[i % BIKE_PALETTE.length];
-      s.status = 'OCCUPIED';
-      s.vehicleId = id;
-      s.vehicleColor = col;
-      s.parkedAt = '13:48:00';
-      state.parkedDb.set(id, { slotId: s.id, zone: s.zone, vehicleType: 'BIKE', color: col, parkedAt: s.parkedAt });
-    }
-    saveDb();
-  }
-
-  function hardClearState() {
-    clearTimers();
+  function seedLots(carCount, bikeCount, allCars = false) {
     state.slots = buildSlots();
     state.vehicles = [];
     state.parkedDb.clear();
@@ -1881,200 +1474,101 @@
     state.overflowApproved = false;
     state.overflowRoutedCount = 0;
     state.bike2Active = false;
-    state.stepQueue = [];
-    state.agentFeed = [];
     state.auditLog = [];
-    state.signHistory = [];
-    state.signText = '';
+
+    const cars = state.slots.filter(s => s.zone === 'ZONE_CAR' && (allCars || !s.accessible));
+    for (let i = 0; i < Math.min(carCount, cars.length); i++) {
+      const s = cars[i], id = `CAR-${200 + i}`, col = CAR_COLORS[i % CAR_COLORS.length];
+      s.status = 'OCCUPIED'; s.vehicleId = id; s.vehicleColor = col; s.parkedAt = '13:45:00';
+      state.parkedDb.set(id, { slotId: s.id, zone: s.zone, vehicleType: 'CAR', color: col, parkedAt: s.parkedAt });
+    }
+    const bikes = state.slots.filter(s => s.zone === 'ZONE_BIKE_1');
+    for (let i = 0; i < Math.min(bikeCount, bikes.length); i++) {
+      const s = bikes[i], id = `BK-${500 + i}`, col = BIKE_COLORS[i % BIKE_COLORS.length];
+      s.status = 'OCCUPIED'; s.vehicleId = id; s.vehicleColor = col; s.parkedAt = '13:48:00';
+      state.parkedDb.set(id, { slotId: s.id, zone: s.zone, vehicleType: 'BIKE', color: col, parkedAt: s.parkedAt });
+    }
+    saveDb();
+    updateSignJunction();
+    renderApproval();
+    renderSlots();
+    renderDb();
+    renderAudit();
+    updateStats();
   }
 
-  function resetScenario(silent = false) {
-    hardClearState();
+  function demo1CarOverflow() {
+    clearDemos();
+    seedLots(30, 44, true);
+    setStory('Schedule Shift: C-101 moved to Lab 2 + visiting group arriving (Car Lot 30/30 FULL).', 'warn');
+    setAiLoop({
+      sense: 'Schedule note: "Class moved C-101 → Lab 2; visiting group arriving." Car Lot 30/30 FULL; Bike Lot 44/64.',
+      think: 'Anticipating visiting car overflow while two-wheelers still fit normally on the left.',
+      act: 'Incoming visiting car CAR-VIS-01 arriving at gate now...',
+      explain: 'Approve the orange card on the right to route CAR-VIS-01 straight ahead and right.'
+    });
+    state.demoTimers.push(setTimeout(() => addCar('CAR-VIS-01'), 700));
+    state.demoTimers.push(setTimeout(() => addBike('BK-STU-12'), 2300));
+  }
+
+  function demo2BikeRedirect() {
+    clearDemos();
+    seedLots(16, 63, false);
+    setStory('Bike Surge: 63/64 full (1 spot left) — watch SIGN_JUNCTION flip to Bike Zone 2!', 'sky');
+    state.demoTimers.push(setTimeout(() => addBike('BK-64-LAST'), 450));
+    state.demoTimers.push(setTimeout(() => addBike('BK-Z2-01'), 2400));
+    state.demoTimers.push(setTimeout(() => addBike('BK-Z2-02'), 4200));
+  }
+
+  function demo3DuplicateScan() {
+    const ids = Array.from(state.parkedDb.keys());
+    if (ids.length) {
+      const id = ids[ids.length - 1];
+      if (state.parkedDb.get(id).vehicleType === 'CAR') addCar(id);
+      else addBike(id);
+    } else {
+      addCar('CAR-101');
+      state.demoTimers.push(setTimeout(() => addCar('CAR-101'), 900));
+    }
+  }
+
+  function resetAll(silent = false) {
+    clearDemos();
     state.simSeconds = 14 * 3600;
     state.carSeq = 101;
     state.bikeSeq = 401;
-    seedDbOccupancy({ carCount: 12, bike1Count: 24 });
-    setDemandBanner('Live Monitor', '3 vision cameras online (Main Gate, Car Lot, Bike Lot) — click any parked vehicle to remove it dynamically.', true);
-    updateSignJunction('Baseline DB initialized');
-    renderApprovalCard();
-    renderSlots();
-    renderCameras();
-    renderAgentFeed();
-    renderAuditTable();
-    renderDbTable();
-    updateStepUI();
-    updateHUD();
-    if (!silent) showToast('Database reset to baseline campus occupancy.', 'info');
+    seedLots(12, 24, false);
+    setStory('Baseline campus state ready — pick Demo 1, 2, or 3 on the right.');
+    setAiLoop({
+      sense: '3 vision cameras online (Main Gate, Car Lot, Bike Lot).',
+      think: 'Live DB synced: 12/30 cars and 24/64 bikes parked.',
+      act: 'SIGN_JUNCTION showing normal open routing for both lots.',
+      explain: 'Click any parked car/bike on the map to remove it and watch its bay free up.'
+    });
+    if (!silent) toast('Reset to clean baseline.', 'info');
   }
 
-  function emptyAllLots() {
-    hardClearState();
-    saveDb();
-    setDemandBanner('Empty Campus', 'All lots emptied (0 vehicles in DB). Spawn cars or bikes to watch bays fill dynamically.', true);
-    updateSignJunction('All lots cleared');
-    renderApprovalCard();
-    renderSlots();
-    renderAgentFeed();
-    renderAuditTable();
-    renderDbTable();
-    updateStepUI();
-    updateHUD();
-    showToast('All parking bays emptied in DB.', 'info');
+  /* ================= SVG RENDERING ================= */
+  function el(tag, attrs = {}) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
   }
 
-  function enqueuePreset(steps) {
-    clearTimers();
-    state.stepQueue = steps;
-    updateStepUI();
-    if (state.stepMode) runNextStep();
-    else runAutoQueue();
-  }
-
-  function runAutoQueue() {
-    if (!state.stepQueue.length) { updateStepUI(); return; }
-    const step = state.stepQueue.shift();
-    updateStepUI();
-    step.fn();
-    if (state.stepQueue.length) {
-      if (step.pauseForHuman) {
-        updateStepUI('Click Approve Redirect / Reject & Exit above to continue.');
-        return;
-      }
-      state.autoTimer = setTimeout(runAutoQueue, step.delayMs || 2600);
-    }
-  }
-
-  function runNextStep() {
-    clearTimers();
-    if (!state.stepQueue.length) return;
-    const step = state.stepQueue.shift();
-    step.fn();
-    updateStepUI();
-  }
-
-  function updateStepUI(override = null) {
-    const btn = document.getElementById('btnNextStep');
-    const desc = document.getElementById('stepDesc');
-    btn.disabled = state.stepQueue.length === 0;
-    if (override) {
-      desc.textContent = override;
-    } else if (state.stepQueue.length > 0) {
-      desc.innerHTML = `<strong>Next (${state.stepQueue.length} left):</strong> ${state.stepQueue[0].label}`;
-    } else {
-      desc.textContent = state.stepMode
-        ? 'Step Mode active — launch a demo preset to step event-by-event.'
-        : 'Run a demo preset or spawn/remove vehicles directly. Click any parked bay to release it.';
-    }
-  }
-
-  function runRound1Hook() {
-    hardClearState();
-    state.simSeconds = 14 * 3600 + 5 * 60;
-    state.carSeq = 801;
-    state.bikeSeq = 601;
-    seedDbOccupancy({ carCount: 30, bike1Count: 44, includeAccessible: true });
-    renderSlots();
-    renderDbTable();
-    updateSignJunction('Round 1 Hook loaded (Car Lot 30/30 full, Bike Lot 1 open)');
-    renderApprovalCard();
-    updateHUD();
-
-    enqueuePreset([
-      {
-        label: 'Sense schedule shift note (C-101 → Lab 2 + visiting group)',
-        delayMs: 2100,
-        fn: () => {
-          setDemandBanner('Schedule Shift', 'Note ingested: "Afternoon class moved from C-101 to Lab 2; visiting group arriving."', false);
-          addAgentStep('SENSE', 'Schedule Shift & Visiting Group Detected',
-            'Parsed note: C-101 → Lab 2 move + visiting group arriving. Live DB: Car Lot 30/30 FULL, Bike Lot 1 44/64 (20 open).');
-          addAudit({
-            eventId: 'NOTE · C101→LAB2',
-            evidence: 'Car Lot 30/30; Bike 1 44/64',
-            ruledOut: 'No bike redirect needed',
-            outcome: 'Overflow policy primed',
-            outcomeType: 'ok'
-          });
-        }
-      },
-      {
-        label: 'Visiting car arrives at full Car Lot → pause for Attendant Overflow Approval',
-        delayMs: 2500,
-        pauseForHuman: true,
-        fn: () => handleCarArrival('CAR-VIS-01')
-      },
-      {
-        label: 'Incoming bike arrives → parks & commits in Bike Lot 1',
-        delayMs: 2800,
-        fn: () => handleBikeArrival('BK-STU-12')
-      },
-      {
-        label: 'Parked car leaves Car Lot → frees 1 slot in DB & reverts Car Lot to Open',
-        delayMs: 2000,
-        fn: () => removeOneVehicle('CAR', 'ZONE_CAR')
-      }
-    ]);
-  }
-
-  function runBikeRedirectPreset() {
-    hardClearState();
-    state.simSeconds = 14 * 3600 + 12 * 60;
-    state.carSeq = 850;
-    state.bikeSeq = 701;
-    seedDbOccupancy({ carCount: 16, bike1Count: 63 });
-    setDemandBanner('Bike Surge', 'Peak lecture changeover: Bike Lot 1 at 63/64 (1 slot left) — testing automatic Bike Zone 2 redirect.', false);
-    renderSlots();
-    renderDbTable();
-    updateSignJunction('Bike Surge loaded (63/64)');
-    renderApprovalCard();
-    updateHUD();
-
-    enqueuePreset([
-      {
-        label: 'Bike #1 takes last open bay in Bike Lot 1 (64/64 FULL)',
-        delayMs: 2800,
-        fn: () => handleBikeArrival('BK-LAST-64')
-      },
-      {
-        label: 'Bike #2 arrives → SIGN_JUNCTION redirects right around perimeter to Bike Zone 2',
-        delayMs: 3200,
-        fn: () => handleBikeArrival('BK-REDIR-01')
-      },
-      {
-        label: 'Bike #3 follows perimeter redirect & commits in Bike Zone 2',
-        delayMs: 3200,
-        fn: () => handleBikeArrival('BK-REDIR-02')
-      },
-      {
-        label: 'One bike exits Bike Lot 1 → slot frees & SIGN_JUNCTION reverts to Bike Lot 1',
-        delayMs: 2000,
-        fn: () => removeOneVehicle('BIKE', 'ZONE_BIKE_1')
-      }
-    ]);
-  }
-
-  /* =========================================================
-     7. SVG RENDERERS (SLOTS + PERSISTENT PARKED VEHICLES + 3 CAMERAS)
-     ========================================================= */
-  function createSvgEl(tag, attrs = {}) {
-    const el = document.createElementNS(SVG_NS, tag);
-    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-    return el;
-  }
-
-  function buildVehicleGraphic(type, color, scale = 1) {
-    const g = createSvgEl('g', scale !== 1 ? { transform: `scale(${scale})` } : {});
+  function vehicleSvg(type, color, scale = 1) {
+    const g = el('g', scale !== 1 ? { transform: `scale(${scale})` } : {});
     if (type === 'CAR') {
-      g.appendChild(createSvgEl('rect', { x: -16, y: -8.5, width: 32, height: 17, rx: 4.5, fill: '#06090f', opacity: '0.45', transform: 'translate(1.2,1.6)' }));
-      g.appendChild(createSvgEl('rect', { x: -16, y: -8.5, width: 32, height: 17, rx: 4.5, fill: color, stroke: '#0b0f17', 'stroke-width': '1.3' }));
-      g.appendChild(createSvgEl('rect', { x: 2, y: -6, width: 6.5, height: 12, rx: 1.8, fill: '#0f172a', opacity: '0.84' }));
-      g.appendChild(createSvgEl('rect', { x: -11, y: -5.5, width: 5, height: 11, rx: 1.4, fill: '#0f172a', opacity: '0.72' }));
-      g.appendChild(createSvgEl('circle', { cx: 14.5, cy: -5, r: 1.7, fill: '#fef08a' }));
-      g.appendChild(createSvgEl('circle', { cx: 14.5, cy: 5, r: 1.7, fill: '#fef08a' }));
+      g.appendChild(el('rect', { x: -16, y: -8.5, width: 32, height: 17, rx: 4.5, fill: '#05080e', opacity: '0.45', transform: 'translate(1.2,1.6)' }));
+      g.appendChild(el('rect', { x: -16, y: -8.5, width: 32, height: 17, rx: 4.5, fill: color, stroke: '#0b0f17', 'stroke-width': '1.3' }));
+      g.appendChild(el('rect', { x: 2, y: -6, width: 6.5, height: 12, rx: 1.8, fill: '#0f172a', opacity: '0.84' }));
+      g.appendChild(el('rect', { x: -11, y: -5.5, width: 5, height: 11, rx: 1.4, fill: '#0f172a', opacity: '0.72' }));
+      g.appendChild(el('circle', { cx: 14.5, cy: -5, r: 1.7, fill: '#fef08a' }));
+      g.appendChild(el('circle', { cx: 14.5, cy: 5, r: 1.7, fill: '#fef08a' }));
     } else {
-      g.appendChild(createSvgEl('rect', { x: -8.5, y: -3.4, width: 17, height: 6.8, rx: 3.2, fill: color, stroke: '#0b0f17', 'stroke-width': '1.1' }));
-      g.appendChild(createSvgEl('line', { x1: 3.5, y1: -5.2, x2: 3.5, y2: 5.2, stroke: '#e2e8f0', 'stroke-width': '1.6', 'stroke-linecap': 'round' }));
-      g.appendChild(createSvgEl('circle', { cx: -1, cy: 0, r: 3, fill: '#f8fafc', stroke: '#0b0f17', 'stroke-width': '0.9' }));
-      g.appendChild(createSvgEl('circle', { cx: 8, cy: 0, r: 1.5, fill: '#fef08a' }));
+      g.appendChild(el('rect', { x: -8.5, y: -3.4, width: 17, height: 6.8, rx: 3.2, fill: color, stroke: '#0b0f17', 'stroke-width': '1.1' }));
+      g.appendChild(el('line', { x1: 3.5, y1: -5.2, x2: 3.5, y2: 5.2, stroke: '#e2e8f0', 'stroke-width': '1.6', 'stroke-linecap': 'round' }));
+      g.appendChild(el('circle', { cx: -1, cy: 0, r: 3, fill: '#f8fafc', stroke: '#0b0f17', 'stroke-width': '0.9' }));
+      g.appendChild(el('circle', { cx: 8, cy: 0, r: 1.5, fill: '#fef08a' }));
     }
     return g;
   }
@@ -2083,107 +1577,54 @@
     const g = document.getElementById('camerasLayer');
     g.innerHTML = '';
     const now = performance.now();
-
     CAMERAS.forEach(cam => {
-      const active = (state.camFlash[cam.id] || 0) > now;
-      const grp = createSvgEl('g', { style: 'cursor:pointer;' });
+      const lit = (state.camFlash[cam.id] || 0) > now;
+      const grp = el('g', { style: 'cursor:pointer;' });
+      const r1 = ((cam.fovAngle - cam.fovSpan / 2) * Math.PI) / 180;
+      const r2 = ((cam.fovAngle + cam.fovSpan / 2) * Math.PI) / 180;
+      const x1 = cam.x + Math.cos(r1) * cam.fovLen, y1 = cam.y + Math.sin(r1) * cam.fovLen;
+      const x2 = cam.x + Math.cos(r2) * cam.fovLen, y2 = cam.y + Math.sin(r2) * cam.fovLen;
 
-      // Subtle translucent FOV vision cone
-      const rad1 = ((cam.fovAngle - cam.fovSpan / 2) * Math.PI) / 180;
-      const rad2 = ((cam.fovAngle + cam.fovSpan / 2) * Math.PI) / 180;
-      const x1 = cam.x + Math.cos(rad1) * cam.fovLen;
-      const y1 = cam.y + Math.sin(rad1) * cam.fovLen;
-      const x2 = cam.x + Math.cos(rad2) * cam.fovLen;
-      const y2 = cam.y + Math.sin(rad2) * cam.fovLen;
-
-      grp.appendChild(createSvgEl('path', {
+      grp.appendChild(el('path', {
         d: `M ${cam.x} ${cam.y} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${cam.fovLen} ${cam.fovLen} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`,
-        fill: active ? 'rgba(245, 158, 11, 0.28)' : 'rgba(56, 189, 248, 0.16)',
-        stroke: active ? 'rgba(245, 158, 11, 0.65)' : 'rgba(56, 189, 248, 0.35)',
-        'stroke-width': '1',
-        'stroke-dasharray': '3 3'
+        fill: lit ? 'rgba(245, 158, 11, 0.28)' : 'rgba(56, 189, 248, 0.16)',
+        stroke: lit ? 'rgba(245, 158, 11, 0.65)' : 'rgba(56, 189, 248, 0.35)',
+        'stroke-width': '1', 'stroke-dasharray': '3 3'
       }));
+      grp.appendChild(el('circle', { cx: cam.x, cy: cam.y, r: 11, fill: '#0b1220', stroke: lit ? '#fbbf24' : '#38bdf8', 'stroke-width': lit ? '2.4' : '1.8' }));
+      grp.appendChild(el('rect', { x: cam.x - 5.5, y: cam.y - 3.5, width: 8, height: 7, rx: 1.5, fill: lit ? '#fbbf24' : '#7dd3fc' }));
+      grp.appendChild(el('polygon', { points: `${cam.x + 2.5},${cam.y - 2} ${cam.x + 6.5},${cam.y - 4} ${cam.x + 6.5},${cam.y + 4} ${cam.x + 2.5},${cam.y + 2}`, fill: lit ? '#fbbf24' : '#7dd3fc' }));
 
-      // Camera housing circle + lens icon
-      grp.appendChild(createSvgEl('circle', {
-        cx: cam.x, cy: cam.y, r: 11,
-        fill: '#0b1220',
-        stroke: active ? '#fbbf24' : '#38bdf8',
-        'stroke-width': active ? '2.4' : '1.8'
-      }));
-      // Miniature CCTV lens vector
-      grp.appendChild(createSvgEl('rect', {
-        x: cam.x - 5.5, y: cam.y - 3.5, width: 8, height: 7, rx: 1.5,
-        fill: active ? '#fbbf24' : '#7dd3fc'
-      }));
-      grp.appendChild(createSvgEl('polygon', {
-        points: `${cam.x + 2.5},${cam.y - 2} ${cam.x + 6.5},${cam.y - 4} ${cam.x + 6.5},${cam.y + 4} ${cam.x + 2.5},${cam.y + 2}`,
-        fill: active ? '#fbbf24' : '#7dd3fc'
-      }));
-
-      // Crisp small CAM tag right beside the lens
-      const tx = cam.id === 'CAM-1' ? cam.x + 15 : cam.x - 24;
+      const tx = cam.id === 'CAM-1' ? cam.x + 15 : cam.x - 23;
       const ty = cam.id === 'CAM-1' ? cam.y + 3 : cam.y - 16;
-      grp.appendChild(createSvgEl('rect', {
-        x: tx, y: ty - 9, width: 46, height: 14, rx: 4,
-        fill: 'rgba(9,12,18,0.9)', stroke: active ? '#fbbf24' : '#38bdf8', 'stroke-width': '1'
-      }));
-      const txt = createSvgEl('text', {
-        x: tx + 23, y: ty + 1, 'text-anchor': 'middle',
-        fill: active ? '#fde68a' : '#bae6fd',
-        'font-family': 'ui-monospace, monospace', 'font-size': '8.2', 'font-weight': '800'
-      });
-      txt.textContent = cam.id;
-      grp.appendChild(txt);
+      grp.appendChild(el('rect', { x: tx, y: ty - 9, width: 46, height: 14, rx: 4, fill: 'rgba(8,11,17,0.9)', stroke: lit ? '#fbbf24' : '#38bdf8', 'stroke-width': '1' }));
+      const t = el('text', { x: tx + 23, y: ty + 1, 'text-anchor': 'middle', fill: lit ? '#fde68a' : '#bae6fd', 'font-family': 'ui-monospace, monospace', 'font-size': '8.2', 'font-weight': '800' });
+      t.textContent = cam.id;
+      grp.appendChild(t);
 
-      grp.addEventListener('mouseenter', e => showCamTooltip(e, cam));
-      grp.addEventListener('mousemove', moveTooltip);
-      grp.addEventListener('mouseleave', hideTooltip);
+      grp.addEventListener('mouseenter', e => showTip(e, `${cam.id} · ${cam.name}`, 'ONLINE', cam.role, ''));
+      grp.addEventListener('mousemove', moveTip);
+      grp.addEventListener('mouseleave', hideTip);
       g.appendChild(grp);
     });
   }
 
-  function renderActiveRoutes() {
+  function renderRoutes() {
     const g = document.getElementById('routeLayer');
     g.innerHTML = '';
-
-    // Highlight glowing right-perimeter bike route when Bike Zone 2 is active
     if (state.bike2Active) {
       const d = 'M 608 556 L 690 534 L 752 526 L 778 548 L 894 591 L 1062 642 L 1120 654 L 1154 648 L 1172 622 L 1202 512';
-      g.appendChild(createSvgEl('path', {
-        d, fill: 'none', stroke: '#38bdf8', 'stroke-width': '6',
-        'stroke-opacity': '0.24', 'stroke-linecap': 'round', 'stroke-linejoin': 'round'
-      }));
-      g.appendChild(createSvgEl('path', {
-        d, fill: 'none', stroke: '#38bdf8', 'stroke-width': '2.6',
-        'stroke-dasharray': '10 8', 'stroke-linecap': 'round', class: 'route-flow',
-        filter: 'url(#glowSky)'
-      }));
+      g.appendChild(el('path', { d, fill: 'none', stroke: '#38bdf8', 'stroke-width': '6', 'stroke-opacity': '0.24', 'stroke-linecap': 'round' }));
+      g.appendChild(el('path', { d, fill: 'none', stroke: '#38bdf8', 'stroke-width': '2.6', 'stroke-dasharray': '10 8', 'stroke-linecap': 'round', class: 'route-flow', filter: 'url(#glowSky)' }));
     }
-
-    // Highlight Straight-Ahead -> RIGHT TURN overflow route when approved or pending
     if (state.overflowApproved || state.pendingApproval) {
       const d = 'M 608 556 L 614 360 L 614 52 Q 614 48 715 48 Q 830 44 965 10';
       const col = state.overflowApproved ? '#f59e0b' : '#fbbf24';
-      g.appendChild(createSvgEl('path', {
-        d, fill: 'none', stroke: col, 'stroke-width': '6',
-        'stroke-opacity': '0.22', 'stroke-linecap': 'round'
-      }));
-      g.appendChild(createSvgEl('path', {
-        d, fill: 'none', stroke: col, 'stroke-width': '2.8',
-        'stroke-dasharray': '10 8', 'stroke-linecap': 'round', class: 'route-flow',
-        filter: 'url(#glowAmber)'
-      }));
-      // Clean small road-sign badge on upper-right curve showing OVERFLOW -> RIGHT
-      g.appendChild(createSvgEl('rect', {
-        x: 780, y: 12, width: 158, height: 22, rx: 6,
-        fill: 'rgba(9,12,18,0.9)', stroke: col, 'stroke-width': '1.4'
-      }));
-      const t = createSvgEl('text', {
-        x: 859, y: 26.5, 'text-anchor': 'middle', fill: '#fde68a',
-        'font-family': 'ui-monospace, monospace', 'font-size': '9.5', 'font-weight': '800'
-      });
-      t.textContent = state.overflowApproved ? 'OVERFLOW CORRIDOR ↗' : 'OVERFLOW (PENDING) ↗';
+      g.appendChild(el('path', { d, fill: 'none', stroke: col, 'stroke-width': '6', 'stroke-opacity': '0.22', 'stroke-linecap': 'round' }));
+      g.appendChild(el('path', { d, fill: 'none', stroke: col, 'stroke-width': '2.8', 'stroke-dasharray': '10 8', 'stroke-linecap': 'round', class: 'route-flow', filter: 'url(#glowAmber)' }));
+      g.appendChild(el('rect', { x: 785, y: 12, width: 152, height: 22, rx: 6, fill: 'rgba(8,11,17,0.92)', stroke: col, 'stroke-width': '1.4' }));
+      const t = el('text', { x: 861, y: 26.5, 'text-anchor': 'middle', fill: '#fde68a', 'font-family': 'ui-monospace, monospace', 'font-size': '9.5', 'font-weight': '800' });
+      t.textContent = state.overflowApproved ? 'OVERFLOW ↗' : 'OVERFLOW (WAIT) ↗';
       g.appendChild(t);
     }
   }
@@ -2191,288 +1632,165 @@
   function renderSlots() {
     const g = document.getElementById('slotsLayer');
     g.innerHTML = '';
-
-    state.slots.forEach(slot => {
-      const grp = createSvgEl('g', {
-        transform: slot.angle ? `rotate(${slot.angle} ${slot.cx} ${slot.cy})` : '',
-        style: slot.status === 'OCCUPIED' ? 'cursor:pointer;' : 'cursor:default;'
+    state.slots.forEach(s => {
+      const grp = el('g', {
+        transform: s.angle ? `rotate(${s.angle} ${s.cx} ${s.cy})` : '',
+        style: s.status === 'OCCUPIED' ? 'cursor:pointer;' : 'cursor:default;'
       });
+      let fill = 'rgba(16,185,129,0.24)', stroke = '#10b981', dash = 'none';
+      if (s.status === 'OCCUPIED') { fill = 'rgba(239,68,68,0.26)'; stroke = '#f87171'; }
+      else if (s.status === 'INBOUND') { fill = 'rgba(245,158,11,0.25)'; stroke = '#fbbf24'; dash = '3 2'; }
+      else if (s.status === 'LOCKED') { fill = 'rgba(100,116,139,0.14)'; stroke = 'rgba(148,163,184,0.45)'; dash = '3 2'; }
+      else if (s.accessible) { fill = 'rgba(56,189,248,0.28)'; stroke = '#38bdf8'; }
 
-      let fill = 'rgba(16, 185, 129, 0.24)';
-      let stroke = '#10b981';
-      let dash = 'none';
-      if (slot.status === 'OCCUPIED') {
-        fill = 'rgba(239, 68, 68, 0.28)';
-        stroke = '#f87171';
-      } else if (slot.status === 'INBOUND') {
-        fill = 'rgba(245, 158, 11, 0.26)';
-        stroke = '#fbbf24';
-        dash = '3 2';
-      } else if (slot.status === 'LOCKED') {
-        fill = 'rgba(100, 116, 139, 0.16)';
-        stroke = 'rgba(148, 163, 184, 0.5)';
-        dash = '3 2';
-      } else if (slot.accessible) {
-        fill = 'rgba(56, 189, 248, 0.28)';
-        stroke = '#38bdf8';
-      }
+      grp.appendChild(el('rect', { x: s.x, y: s.y, width: s.w, height: s.h, rx: s.vehicleType === 'CAR' ? 3 : 2.5, fill, stroke, 'stroke-width': '1.2', 'stroke-dasharray': dash }));
 
-      grp.appendChild(createSvgEl('rect', {
-        x: slot.x, y: slot.y, width: slot.w, height: slot.h,
-        rx: slot.vehicleType === 'CAR' ? 3 : 2.5,
-        fill, stroke,
-        'stroke-width': slot.status === 'OCCUPIED' ? '1.3' : '1.1',
-        'stroke-dasharray': dash
-      }));
-
-      // CRITICAL: Render the ACTUAL PARKED CAR / BIKE permanently inside occupied slots!
-      if (slot.status === 'OCCUPIED') {
-        const parkedG = createSvgEl('g', {
-          transform: `translate(${slot.cx}, ${slot.cy}) rotate(${slot.vehicleType === 'CAR' ? slot.parkAngle : 0})`
-        });
-        parkedG.appendChild(buildVehicleGraphic(
-          slot.vehicleType,
-          slot.vehicleColor || (slot.vehicleType === 'CAR' ? '#38bdf8' : '#34d399'),
-          slot.vehicleType === 'CAR' ? 0.96 : 0.84
-        ));
-        grp.appendChild(parkedG);
-
-        if (slot.vehicleType === 'CAR' && slot.vehicleId) {
-          // Subtle readable ID micro-pill over car roof
-          const shortId = slot.vehicleId.replace('CAR-', '');
-          grp.appendChild(createSvgEl('rect', {
-            x: slot.cx - 14, y: slot.cy - 5, width: 28, height: 10, rx: 2.5,
-            fill: 'rgba(9,12,18,0.82)'
-          }));
-          const lbl = createSvgEl('text', {
-            x: slot.cx, y: slot.cy + 2.8, 'text-anchor': 'middle',
-            fill: '#f8fafc', 'font-family': 'ui-monospace, monospace', 'font-size': '7', 'font-weight': '800'
-          });
-          lbl.textContent = shortId;
+      if (s.status === 'OCCUPIED') {
+        const pg = el('g', { transform: `translate(${s.cx},${s.cy}) rotate(${s.vehicleType === 'CAR' ? s.parkAngle : 0})` });
+        pg.appendChild(vehicleSvg(s.vehicleType, s.vehicleColor || '#38bdf8', s.vehicleType === 'CAR' ? 0.96 : 0.84));
+        grp.appendChild(pg);
+        if (s.vehicleType === 'CAR' && s.vehicleId) {
+          grp.appendChild(el('rect', { x: s.cx - 14, y: s.cy - 5, width: 28, height: 10, rx: 2.5, fill: 'rgba(8,11,17,0.82)' }));
+          const lbl = el('text', { x: s.cx, y: s.cy + 2.8, 'text-anchor': 'middle', fill: '#f8fafc', 'font-family': 'ui-monospace, monospace', 'font-size': '7', 'font-weight': '800' });
+          lbl.textContent = s.vehicleId.replace('CAR-', '');
           grp.appendChild(lbl);
         }
-      } else if (slot.accessible && slot.status === 'AVAILABLE') {
-        const acc = createSvgEl('text', {
-          x: slot.cx, y: slot.cy + 4, 'text-anchor': 'middle',
-          fill: '#e0f2fe', 'font-size': '11', 'font-weight': '800'
-        });
+      } else if (s.accessible && s.status === 'AVAILABLE') {
+        const acc = el('text', { x: s.cx, y: s.cy + 4, 'text-anchor': 'middle', fill: '#e0f2fe', 'font-size': '11', 'font-weight': '800' });
         acc.textContent = '♿';
         grp.appendChild(acc);
       }
 
-      grp.addEventListener('mouseenter', e => showSlotTooltip(e, slot));
-      grp.addEventListener('mousemove', moveTooltip);
-      grp.addEventListener('mouseleave', hideTooltip);
-      grp.addEventListener('click', () => {
-        if (slot.status === 'OCCUPIED') {
-          hideTooltip();
-          removeVehicleBySlot(slot);
-        }
+      grp.addEventListener('mouseenter', e => {
+        const info = s.vehicleId ? `${s.vehicleId} · Parked ${s.parkedAt}` : (s.accessible ? 'Accessible / Reserved bay' : 'Ready for assignment');
+        const hint = s.status === 'OCCUPIED' ? 'Click to remove vehicle & free bay' : '';
+        showTip(e, s.id, s.status, info, hint);
       });
+      grp.addEventListener('mousemove', moveTip);
+      grp.addEventListener('mouseleave', hideTip);
+      grp.addEventListener('click', () => { if (s.status === 'OCCUPIED') { hideTip(); removeSlotVehicle(s); } });
       g.appendChild(grp);
     });
   }
 
-  function showSlotTooltip(e, slot) {
-    const tt = document.getElementById('tooltip');
-    let rows = `<div class="tt-row">Zone: <b>${slot.zone}</b> · ${slot.vehicleType}</div>`;
-    if (slot.vehicleId) rows += `<div class="tt-row">Vehicle ID: <b>${slot.vehicleId}</b></div>`;
-    if (slot.parkedAt) rows += `<div class="tt-row">DB Stored At: ${slot.parkedAt}</div>`;
-    if (slot.accessible) rows += `<div class="tt-row" style="color:#7dd3fc;">♿ Accessible / Reserved</div>`;
-    const hint = slot.status === 'OCCUPIED' ? '<div class="tt-hint">Click bay to remove vehicle &amp; free slot</div>' : '';
-    tt.innerHTML = `<div class="tt-head"><span>${slot.id}</span><span style="color:${slot.status === 'OCCUPIED' ? '#fca5a5' : '#6ee7b7'}">${slot.status}</span></div>${rows}${hint}`;
-    tt.style.display = 'block';
-    moveTooltip(e);
-  }
-
-  function showCamTooltip(e, cam) {
-    const tt = document.getElementById('tooltip');
-    tt.innerHTML = `
-      <div class="tt-head"><span>${cam.id} · ${cam.name}</span><span style="color:#6ee7b7">ONLINE</span></div>
-      <div class="tt-row">${cam.role}</div>
-      <div class="tt-row" style="color:#94a3b8;margin-top:3px;">Frames converted to synthetic count &amp; discarded</div>
-    `;
-    tt.style.display = 'block';
-    moveTooltip(e);
-  }
-
-  function moveTooltip(e) {
-    const tt = document.getElementById('tooltip');
-    tt.style.left = Math.min(window.innerWidth - 220, e.clientX + 14) + 'px';
-    tt.style.top = Math.min(window.innerHeight - 130, e.clientY + 14) + 'px';
-  }
-  function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
-
   function renderVehicles() {
     const g = document.getElementById('vehiclesLayer');
     g.innerHTML = '';
-
     state.vehicles.forEach(v => {
-      const grp = createSvgEl('g', { transform: `translate(${v.x.toFixed(1)}, ${v.y.toFixed(1)})` });
-      const body = createSvgEl('g', { transform: `rotate(${v.angle.toFixed(1)})` });
-      body.appendChild(buildVehicleGraphic(v.type, v.color, 1));
+      const grp = el('g', { transform: `translate(${v.x.toFixed(1)},${v.y.toFixed(1)})` });
+      const body = el('g', { transform: `rotate(${v.angle.toFixed(1)})` });
+      body.appendChild(vehicleSvg(v.type, v.color, 1));
       grp.appendChild(body);
-
-      grp.appendChild(createSvgEl('rect', {
-        x: -24, y: -22, width: 48, height: 12, rx: 3,
-        fill: 'rgba(9,12,18,0.92)', stroke: v.mode === 'HOLD' ? '#f59e0b' : v.color, 'stroke-width': '0.9'
-      }));
-      const txt = createSvgEl('text', {
-        x: 0, y: -13.5, 'text-anchor': 'middle', fill: '#f8fafc',
-        'font-family': 'ui-monospace, monospace', 'font-size': '7.4', 'font-weight': '800'
-      });
+      grp.appendChild(el('rect', { x: -24, y: -22, width: 48, height: 12, rx: 3, fill: 'rgba(8,11,17,0.92)', stroke: v.mode === 'HOLD' ? '#f59e0b' : v.color, 'stroke-width': '0.9' }));
+      const txt = el('text', { x: 0, y: -13.5, 'text-anchor': 'middle', fill: '#f8fafc', 'font-family': 'ui-monospace, monospace', 'font-size': '7.4', 'font-weight': '800' });
       txt.textContent = v.id;
       grp.appendChild(txt);
       g.appendChild(grp);
     });
   }
 
-  /* =========================================================
-     8. SIDEBAR HUD, DB TABLE & LOG RENDERERS
-     ========================================================= */
-  function updateHUD() {
+  /* ================= SIDEBAR UI UPDATES ================= */
+  function updateStats() {
     const car = zoneStats('ZONE_CAR');
     const b1 = zoneStats('ZONE_BIKE_1');
     const b2 = zoneStats('ZONE_BIKE_2');
 
-    // Car meter (transform: scaleX — GPU composited, zero reflow!)
-    document.getElementById('valCar').textContent = `${car.occupied} / ${car.total}`;
-    const barCar = document.getElementById('barCar');
-    barCar.style.transform = `scaleX(${car.occupied / car.total})`;
-    barCar.style.backgroundColor = car.avail === 0 ? 'var(--rose)' : (car.occupied / car.total > 0.8 ? 'var(--amber)' : 'var(--emerald)');
-    const accOpen = car.list.filter(s => s.accessible && s.status === 'AVAILABLE').length;
-    const chipCar = document.getElementById('chipCar');
-    chipCar.textContent = car.avail === 0 ? 'Full' : `${accOpen} ♿ open`;
-    chipCar.className = 'status-chip ' + (car.avail === 0 ? 'full' : 'ok');
+    // Cars
+    document.getElementById('numCar').textContent = car.occupied;
+    document.getElementById('barCar').style.transform = `scaleX(${car.occupied / car.total})`;
+    document.getElementById('barCar').style.backgroundColor = car.avail === 0 ? 'var(--rose)' : 'var(--emerald)';
+    document.getElementById('stCar').textContent = car.avail === 0 ? 'Full' : `${car.avail} free`;
+    document.getElementById('tileCar').className = 'stat-tile' + (car.avail === 0 ? ' full' : '');
 
-    // Bike 1 meter
-    document.getElementById('valBike1').textContent = `${b1.occupied} / ${b1.total}`;
-    const barB1 = document.getElementById('barBike1');
-    barB1.style.transform = `scaleX(${b1.occupied / b1.total})`;
-    barB1.style.backgroundColor = b1.avail === 0 ? 'var(--rose)' : (b1.occupied / b1.total > 0.85 ? 'var(--amber)' : 'var(--emerald)');
-    const chipB1 = document.getElementById('chipBike1');
-    chipB1.textContent = b1.avail === 0 ? 'Full → Zone 2' : 'Primary';
-    chipB1.className = 'status-chip ' + (b1.avail === 0 ? 'full' : 'ok');
+    // Bikes Main
+    document.getElementById('numBike1').textContent = b1.occupied;
+    document.getElementById('barBike1').style.transform = `scaleX(${b1.occupied / b1.total})`;
+    document.getElementById('barBike1').style.backgroundColor = b1.avail === 0 ? 'var(--rose)' : 'var(--emerald)';
+    document.getElementById('stBike1').textContent = b1.avail === 0 ? 'Full' : `${b1.avail} free`;
+    document.getElementById('tileBike1').className = 'stat-tile' + (b1.avail === 0 ? ' full' : '');
 
-    // Bike 2 meter
-    document.getElementById('valBike2').textContent = `${b2.occupied} / ${b2.total}`;
-    const barB2 = document.getElementById('barBike2');
-    barB2.style.transform = `scaleX(${b2.occupied / b2.total})`;
-    barB2.style.backgroundColor = 'var(--sky)';
-    const chipB2 = document.getElementById('chipBike2');
-    chipB2.textContent = state.bike2Active ? 'Active' : 'Standby';
-    chipB2.className = 'status-chip' + (state.bike2Active ? ' active' : '');
+    // Bike Zone 2
+    document.getElementById('numBike2').textContent = b2.occupied;
+    document.getElementById('barBike2').style.transform = `scaleX(${b2.occupied / b2.total})`;
+    document.getElementById('barBike2').style.backgroundColor = 'var(--sky)';
+    document.getElementById('stBike2').textContent = state.bike2Active ? 'Active' : 'Standby';
+    document.getElementById('tileBike2').className = 'stat-tile' + (state.bike2Active ? ' active' : '');
 
-    // Overflow counter
-    document.getElementById('valOverflowCount').textContent =
-      state.pendingApproval ? `${state.overflowRoutedCount} · Pending` : `${state.overflowRoutedCount} routed`;
+    // Car Overflow
+    document.getElementById('numOv').textContent = state.overflowRoutedCount;
+    document.getElementById('barOv').style.transform = `scaleX(${Math.min(1, state.overflowRoutedCount / 5)})`;
+    document.getElementById('stOv').textContent = state.pendingApproval ? 'Pending' : (state.overflowApproved ? 'Active ↗' : 'Ready');
+    document.getElementById('tileOverflow').className = 'stat-tile' + (state.pendingApproval || state.overflowApproved ? ' warn' : '');
 
-    document.getElementById('activeVehiclesBadge').textContent = `${state.vehicles.length} in transit`;
-    document.getElementById('simClock').textContent = `${fmtTime()} IST`;
     document.getElementById('dbCount').textContent = state.parkedDb.size;
+    document.getElementById('simClock').textContent = `${fmtTime()} IST`;
   }
 
-  function renderApprovalCard() {
-    const card = document.getElementById('approvalCard');
-    if (!state.pendingApproval) { card.classList.remove('visible'); return; }
-    document.getElementById('apVehicleTag').textContent = state.pendingApproval.vehicleId;
-    document.getElementById('apBody').innerHTML =
-      `Car parking is at <strong>30/30</strong> capacity. Approve overflow redirect to route <strong>${state.pendingApproval.vehicleId}</strong> straight ahead and <strong>turn right</strong> onto the external overflow road?`;
-    card.classList.add('visible');
+  function renderApproval() {
+    const c = document.getElementById('approvalCard');
+    if (!state.pendingApproval) { c.classList.remove('visible'); return; }
+    document.getElementById('apDesc').innerHTML = `Car lot is full (30/30). Route <strong>${state.pendingApproval.id}</strong> straight ahead and right to Overflow?`;
+    c.classList.add('visible');
   }
 
-  function renderDbTable() {
+  function renderDb() {
     const tbody = document.getElementById('dbBody');
-    const entries = Array.from(state.parkedDb.entries()).reverse();
-    document.getElementById('dbSummaryText').textContent = `${entries.length} parked vehicles committed in DB`;
-    document.getElementById('dbCount').textContent = entries.length;
-
-    if (!entries.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-3);padding:14px 4px;text-align:center;">No parked vehicles stored in DB.</td></tr>';
+    const rows = Array.from(state.parkedDb.entries()).reverse();
+    document.getElementById('dbSummary').textContent = `${rows.length} parked in local DB`;
+    document.getElementById('dbCount').textContent = rows.length;
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-3);padding:16px 4px;text-align:center;">Lots empty — click + Car or + Bike.</td></tr>';
       return;
     }
-
-    tbody.innerHTML = entries.map(([vehId, rec]) => `
+    tbody.innerHTML = rows.map(([id, r]) => `
       <tr>
-        <td style="font-family:var(--mono);font-weight:700;color:var(--text);">${rec.slotId}</td>
-        <td>
-          <span style="display:inline-block;width:7px;height:7px;border-radius:99px;background:${rec.color};margin-right:5px;"></span>
-          <span style="font-family:var(--mono);">${vehId}</span>
-        </td>
-        <td style="font-family:var(--mono);color:var(--text-3);">${rec.parkedAt}</td>
-        <td style="text-align:right;">
-          <button class="btn-xs btn-reject" data-remove-slot="${rec.slotId}">Remove</button>
-        </td>
+        <td style="font-family:var(--mono);font-weight:700;">${r.slotId}</td>
+        <td><span style="display:inline-block;width:7px;height:7px;border-radius:99px;background:${r.color};margin-right:5px;"></span><span style="font-family:var(--mono);">${id}</span></td>
+        <td style="font-family:var(--mono);color:var(--text-3);">${r.parkedAt}</td>
+        <td style="text-align:right;"><button class="btn-xs btn-reject" data-rm="${r.slotId}">Exit</button></td>
       </tr>
     `).join('');
-
-    tbody.querySelectorAll('[data-remove-slot]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const slot = state.slots.find(s => s.id === btn.dataset.removeSlot);
-        if (slot) removeVehicleBySlot(slot);
-      });
-    });
+    tbody.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => {
+      const s = state.slots.find(x => x.id === b.dataset.rm);
+      if (s) removeSlotVehicle(s);
+    }));
   }
 
-  function renderAgentFeed() {
-    const el = document.getElementById('tabAgent');
-    if (!state.agentFeed.length) {
-      el.innerHTML = '<div style="color:var(--text-3);font-size:11.5px;padding:10px 0;">No agent cycles yet. Run a preset or spawn a vehicle.</div>';
+  function renderAudit() {
+    const tbody = document.getElementById('auditBody');
+    if (!state.auditLog.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-3);padding:16px 4px;text-align:center;">Events will be recorded here automatically.</td></tr>';
       return;
     }
-    el.innerHTML = state.agentFeed.map(item => `
-      <div class="feed-item phase-${item.phase}">
-        <div class="feed-head">
-          <span class="phase-tag">${item.phase}</span>
-          <span class="feed-time">${item.time}</span>
-        </div>
-        <div class="feed-title">${item.title}</div>
-        <div class="feed-body">${item.detail}</div>
-        ${item.sub ? `<div class="feed-sub">${item.sub}</div>` : ''}
-      </div>
-    `).join('');
-  }
-
-  function renderAuditTable() {
-    const tbody = document.getElementById('auditBody');
     tbody.innerHTML = state.auditLog.map(r => `
       <tr>
         <td style="font-family:var(--mono);color:var(--text-3);">${r.time}</td>
-        <td style="font-weight:600;">${r.eventId}</td>
-        <td>
-          <div>${r.evidence}</div>
-          <div style="color:var(--text-3);font-size:10px;">Out: ${r.ruledOut}</div>
-        </td>
-        <td class="tag-${r.outcomeType}">${r.outcome}</td>
+        <td style="font-weight:600;">${r.event}</td>
+        <td style="color:var(--text-2);">${r.why}</td>
+        <td class="tag-${r.cls}">${r.result}</td>
       </tr>
     `).join('');
   }
 
-  function renderSignHistory() {
-    const el = document.getElementById('tabSign');
-    el.innerHTML = state.signHistory.map(h => `
-      <div class="feed-item phase-${h.mode === 'NORMAL' ? 'ACT' : (h.mode === 'REDIRECT' ? 'EXPLAIN' : 'GUARD')}">
-        <div class="feed-head">
-          <span class="phase-tag">${h.mode}</span>
-          <span class="feed-time">${h.time}</span>
-        </div>
-        <div style="font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--text);">${h.text}</div>
-        <div class="feed-sub">${h.reason}</div>
-      </div>
-    `).join('');
+  function showTip(e, head, status, row, hint) {
+    const tt = document.getElementById('tooltip');
+    tt.innerHTML = `<div class="tt-head"><span>${head}</span><span style="color:${status === 'OCCUPIED' ? '#fca5a5' : '#6ee7b7'}">${status}</span></div><div class="tt-row">${row}</div>${hint ? `<div class="tt-hint">${hint}</div>` : ''}`;
+    tt.style.display = 'block';
+    moveTip(e);
   }
+  function moveTip(e) {
+    const tt = document.getElementById('tooltip');
+    tt.style.left = Math.min(window.innerWidth - 210, e.clientX + 14) + 'px';
+    tt.style.top = Math.min(window.innerHeight - 110, e.clientY + 14) + 'px';
+  }
+  function hideTip() { document.getElementById('tooltip').style.display = 'none'; }
 
-  /* =========================================================
-     9. ANIMATION TICK LOOP (60 FPS)
-     ========================================================= */
-  let lastTs = performance.now();
-  let secAccum = 0;
-
+  /* ================= 60 FPS TICK ================= */
+  let lastTs = performance.now(), secAcc = 0;
   function tick(now) {
     const rawDt = Math.min(0.05, (now - lastTs) / 1000);
     lastTs = now;
 
-    // Clear camera flash highlights smoothly after 900ms
     let camDirty = false;
     for (const [cid, exp] of Object.entries(state.camFlash)) {
       if (exp <= now) { delete state.camFlash[cid]; camDirty = true; }
@@ -2481,117 +1799,83 @@
 
     if (!state.paused) {
       const dt = rawDt * state.speed;
-      secAccum += dt;
-      if (secAccum >= 1) {
-        const w = Math.floor(secAccum);
-        secAccum -= w;
-        state.simSeconds += w;
+      secAcc += dt;
+      if (secAcc >= 1) {
+        const w = Math.floor(secAcc); secAcc -= w; state.simSeconds += w;
         document.getElementById('simClock').textContent = `${fmtTime()} IST`;
       }
-
-      const finished = [];
+      const done = [];
       state.vehicles.forEach((v, idx) => {
         if (v.pauseLeft > 0) { v.pauseLeft -= dt * 1000; return; }
-        if (v.segIdx >= v.path.length - 1) {
-          if (v.mode !== 'HOLD') finished.push(idx);
-          return;
-        }
-        const a = v.path[v.segIdx];
-        const b = v.path[v.segIdx + 1];
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.hypot(dx, dy) || 1;
-        const pxPerSec = v.type === 'CAR' ? 205 : 235;
-        v.segT += (pxPerSec * dt) / dist;
+        if (v.segIdx >= v.path.length - 1) { if (v.mode !== 'HOLD') done.push(idx); return; }
+        const a = v.path[v.segIdx], b = v.path[v.segIdx + 1];
+        const dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy) || 1;
+        v.segT += ((v.type === 'CAR' ? 215 : 245) * dt) / dist;
         v.angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-
         if (v.segT >= 1) {
-          v.x = b.x; v.y = b.y;
-          v.segIdx += 1; v.segT = 0;
-          if (b.camId) flashCamera(b.camId);
+          v.x = b.x; v.y = b.y; v.segIdx += 1; v.segT = 0;
+          if (b.camId) flashCam(b.camId);
           if (b.pauseMs) v.pauseLeft = b.pauseMs;
-          if (v.segIdx >= v.path.length - 1 && v.mode !== 'HOLD') finished.push(idx);
+          if (v.segIdx >= v.path.length - 1 && v.mode !== 'HOLD') done.push(idx);
         } else {
-          v.x = a.x + dx * v.segT;
-          v.y = a.y + dy * v.segT;
+          v.x = a.x + dx * v.segT; v.y = a.y + dy * v.segT;
         }
       });
-
-      for (let i = finished.length - 1; i >= 0; i--) {
-        const v = state.vehicles[finished[i]];
-        state.vehicles.splice(finished[i], 1);
+      for (let i = done.length - 1; i >= 0; i--) {
+        const v = state.vehicles[done[i]];
+        state.vehicles.splice(done[i], 1);
         if (v.onArrive) v.onArrive();
       }
       renderVehicles();
     }
-
     requestAnimationFrame(tick);
   }
 
-  /* =========================================================
-     10. CONTROLS & INITIALIZATION
-     ========================================================= */
-  document.getElementById('btnPresetHook').addEventListener('click', runRound1Hook);
-  document.getElementById('btnPresetBike2').addEventListener('click', runBikeRedirectPreset);
-  document.getElementById('btnSpawnCar').addEventListener('click', () => handleCarArrival());
-  document.getElementById('btnRemoveCar').addEventListener('click', () => removeOneVehicle('CAR'));
-  document.getElementById('btnSpawnBike').addEventListener('click', () => handleBikeArrival());
-  document.getElementById('btnRemoveBike').addEventListener('click', () => removeOneVehicle('BIKE'));
-  document.getElementById('btnDupScan').addEventListener('click', simulateDuplicateScan);
-  document.getElementById('btnReset').addEventListener('click', () => resetScenario(false));
-  document.getElementById('btnClearAll').addEventListener('click', emptyAllLots);
+  /* ================= EVENTS & BOOT ================= */
+  document.getElementById('btnDemo1').addEventListener('click', demo1CarOverflow);
+  document.getElementById('btnDemo2').addEventListener('click', demo2BikeRedirect);
+  document.getElementById('btnDemo3').addEventListener('click', demo3DuplicateScan);
+  document.getElementById('btnAddCar').addEventListener('click', () => addCar());
+  document.getElementById('btnRemCar').addEventListener('click', () => removeOne('CAR'));
+  document.getElementById('btnAddBike').addEventListener('click', () => addBike());
+  document.getElementById('btnRemBike').addEventListener('click', () => removeOne('BIKE'));
+  document.getElementById('btnApproveOv').addEventListener('click', approveOverflow);
+  document.getElementById('btnRejectOv').addEventListener('click', rejectOverflow);
+  document.getElementById('btnReset').addEventListener('click', () => resetAll(false));
+  document.getElementById('btnEmptyDb').addEventListener('click', () => { clearDemos(); seedLots(0, 0, false); setStory('All lots cleared — click + Car or + Bike to populate.'); });
 
-  document.getElementById('btnApproveOv').addEventListener('click', () => {
-    approvePendingOverflow();
-    if (!state.stepMode && state.stepQueue.length) state.autoTimer = setTimeout(runAutoQueue, 2400);
-  });
-  document.getElementById('btnRejectOv').addEventListener('click', () => {
-    rejectPendingOverflow();
-    if (!state.stepMode && state.stepQueue.length) state.autoTimer = setTimeout(runAutoQueue, 2200);
-  });
-
-  document.getElementById('chkStepMode').addEventListener('change', (e) => {
-    state.stepMode = e.target.checked;
-    if (state.stepMode) clearTimers();
-    updateStepUI();
-  });
-  document.getElementById('btnNextStep').addEventListener('click', runNextStep);
-
-  document.getElementById('btnSpeed').addEventListener('click', (e) => {
-    state.speed = state.speed === 1 ? 2 : (state.speed === 2 ? 3 : 1);
+  document.getElementById('btnSpeed').addEventListener('click', e => {
+    state.speed = state.speed === 1.5 ? 2.5 : (state.speed === 2.5 ? 1 : 1.5);
     e.target.textContent = `${state.speed}× Speed`;
   });
-  document.getElementById('btnPause').addEventListener('click', (e) => {
+  document.getElementById('btnPause').addEventListener('click', e => {
     state.paused = !state.paused;
     e.target.textContent = state.paused ? 'Resume' : 'Pause';
   });
 
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById(btn.dataset.tab).classList.add('active');
+      document.getElementById(btn.dataset.pane).classList.add('active');
     });
   });
 
   document.getElementById('signJunctionGroup').addEventListener('click', () => {
-    document.querySelector('.tab-btn[data-tab="tabSign"]').click();
+    document.querySelector('.seg-btn[data-pane="paneAudit"]').click();
   });
 
-  // Hydrate persistent DB if present, otherwise initialize clean baseline
   if (loadDb()) {
-    updateSignJunction('Restored live state from persistent DB');
+    updateSignJunction();
     renderSlots();
     renderCameras();
-    renderAgentFeed();
-    renderAuditTable();
-    renderDbTable();
-    updateHUD();
+    renderDb();
+    renderAudit();
+    updateStats();
   } else {
-    resetScenario(true);
+    resetAll(true);
   }
-
   requestAnimationFrame(tick);
 })();
 </script>
