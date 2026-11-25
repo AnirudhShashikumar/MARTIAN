@@ -1,4 +1,4 @@
-"""Local CampusFlow API and transactional synthetic scenario storage."""
+"""CampusFlow HTTP API and the local hardware interface."""
 
 from contextlib import asynccontextmanager, closing
 from dataclasses import dataclass
@@ -6,20 +6,20 @@ import json
 import mimetypes
 import os
 from pathlib import Path
+import re
 import sqlite3
 from tempfile import TemporaryDirectory
 from typing import Literal, Optional
 
-mimetypes.add_type("image/webp", ".webp")
-
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict
 
-import agent
-import room_live
-import scenario
+from prototype import agent, room_live, scenario
+
+
+mimetypes.add_type("image/webp", ".webp")
 
 
 def _allowed_local_host(host: str) -> bool:
@@ -85,41 +85,17 @@ class Store:
                 "SELECT entry FROM audit WHERE run = ? ORDER BY id", (state["id"],)
             )
         ]
-        return {
-            **state, "audit": entries, "model_available": agent.model_enabled(),
-            "note": scenario.NOTE if state["phase"] != "baseline" else None,
-        }
+        return {**state, "audit": entries}
 
     def apply(self, command, choice=None):
         with closing(self.connection()) as db, db:
             db.execute("BEGIN IMMEDIATE")
             state = self.read(db)
-            scenario.require(state["id"] == command.run_id, "This demo was reset. Reload the current scenario.")
             entries = []
-            branch = None
-
-            if command.action == "reset":
-                db.execute("DELETE FROM audit WHERE run = ?", (state["id"],))
-                state = scenario.fixture()
-            elif command.action == "trigger":
-                scenario.inject_change(state, entries)
-            elif command.action in {"run", "confirm"}:
-                scenario.run_agent(state, entries, choice)
-            elif command.action in {"occupied", "vacant", "stale", "override"}:
-                scenario.room_event(state, entries, command.action)
-            elif command.action == "expire":
-                scenario.expire_overflow(state, entries)
-            elif command.action == "exit":
-                scenario.exit_vehicle(state, entries, "GATE-EXIT-021", "CAR-021")
-            elif command.action == "exit_overflow":
-                scenario.exit_vehicle(state, entries, "GATE-EXIT-078", "CAR-078")
-            elif command.action in {"checkout_kit", "return_kit"}:
-                scenario.update_equipment(state, entries, checkout=command.action == "checkout_kit")
-            elif command.action == "review":
-                scenario.require(all([command.branch, command.proposal, command.role, command.decision]),
-                                 "Select a proposal and a review decision.")
-                branch = scenario.review(state, entries, command.branch, command.proposal,
-                                         command.role, command.decision)
+            previous_run = state["id"]
+            state, branch = scenario.apply_command(state, command, entries, choice)
+            if state["id"] != previous_run:
+                db.execute("DELETE FROM audit WHERE run = ?", (previous_run,))
 
             db.execute("UPDATE demo SET state = ? WHERE singleton = 1", (json.dumps(state),))
             persisted = self.read(db)
@@ -170,9 +146,12 @@ class LiveReviewPayload(BaseModel):
     role: str = "Facilities supervisor"
 
 
-def create_app(room_clock=None):
+def create_app(room_clock=None, *, hosted=False, database_url=None):
     @asynccontextmanager
     async def lifespan(application):
+        if hosted:
+            yield
+            return
         with TemporaryDirectory(prefix="campusflow-") as scratch:
             configured = os.environ.get("CAMPUSFLOW_DB")
             path = Path(configured) if configured else Path(scratch) / "demo.sqlite3"
@@ -183,8 +162,43 @@ def create_app(room_clock=None):
             yield
 
     application = FastAPI(title="CampusFlow", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
-    application.add_middleware(LocalHostMiddleware)
-    application.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+    if not hosted:
+        application.add_middleware(LocalHostMiddleware)
+
+    secure_cookie = os.environ.get("VERCEL_ENV") != "development"
+    session_cookie = "__Host-campusflow-demo" if secure_cookie else "campusflow-demo"
+    model_allowed = not hosted or os.environ.get("CAMPUSFLOW_ENABLE_HOSTED_MODEL") == "1"
+
+    if hosted:
+        from prototype.hosted_store import PostgresStore, SESSION_SECONDS, StorageUnavailable
+
+        hosted_store = PostgresStore(os.environ.get("DATABASE_URL") if database_url is None else database_url)
+
+        @application.exception_handler(StorageUnavailable)
+        async def storage_unavailable(_request, error):
+            return JSONResponse({"detail": str(error)}, status_code=503)
+
+        @application.middleware("http")
+        async def prevent_shared_api_cache(request, call_next):
+            response = await call_next(request)
+            if request.url.path.startswith("/api/"):
+                response.headers["Cache-Control"] = "private, no-store"
+            return response
+
+        @application.get("/room-panel")
+        @application.get("/room-console")
+        def hosted_room():
+            return FileResponse(ROOT / "static" / "room_hosted.html")
+
+    def demo_payload(state):
+        return {
+            **state, "model_available": model_allowed and agent.model_enabled(),
+            "note": scenario.NOTE if state["phase"] != "baseline" else None,
+        }
+
+    def read_session_cookie(request):
+        token = request.cookies.get(session_cookie, "")
+        return token if re.fullmatch(r"[A-Za-z0-9_-]{43}", token) else None
 
     @application.get("/")
     def landing():
@@ -195,33 +209,70 @@ def create_app(room_clock=None):
     def dashboard():
         return FileResponse(ROOT / "static" / "index.html")
 
-    @application.get("/room-panel")
-    def room_panel():
-        return FileResponse(ROOT / "static" / "room_panel.html")
-
-    @application.get("/room-console")
-    def room_console():
-        return FileResponse(ROOT / "static" / "room_console.html")
+    @application.get("/api/health")
+    def health():
+        if hosted:
+            hosted_store.ready()
+        return {"status": "ok"}
 
     @application.get("/api/state")
-    def state():
-        return application.state.store.snapshot()
+    def state(request: Request, response: Response):
+        if not hosted:
+            return demo_payload(application.state.store.snapshot())
+        token = read_session_cookie(request)
+        session, snapshot = hosted_store.open_session(token)
+        if session != token:
+            response.set_cookie(session_cookie, session, max_age=SESSION_SECONDS,
+                                secure=secure_cookie, httponly=True, samesite="lax")
+        return demo_payload(snapshot)
 
     @application.post("/api/command")
-    def command(body: Command):
-        store = application.state.store
+    def command(body: Command, request: Request):
+        token = None
+        if hosted:
+            origin = request.headers.get("origin")
+            # Vercel forwards the browser-facing host even when its dev proxy rewrites Host.
+            host = request.headers.get("x-forwarded-host") or request.url.netloc
+            scheme = "https" if secure_cookie else "http"
+            fetch_site = request.headers.get("sec-fetch-site")
+            if fetch_site not in (None, "same-origin") or (origin is not None and origin != f"{scheme}://{host}"):
+                raise HTTPException(status_code=403, detail="Use CampusFlow from its own site.")
+            token = read_session_cookie(request)
+            if token is None:
+                raise HTTPException(status_code=409, detail="Open a dashboard to start a demo session.")
+
         try:
             choice = None
             if body.action == "run":
-                current = store.snapshot()
+                current = hosted_store.snapshot(token) if hosted else application.state.store.snapshot()
                 scenario.require(current["id"] == body.run_id and current["phase"] == "detected",
                                  "Trigger a new schedule change before running the model.")
-                choice = agent.select_tool()
+                choice = agent.select_tool() if model_allowed else agent.MANUAL
             elif body.action == "confirm":
                 choice = agent.MANUAL
-            return store.apply(body, choice)
+            if hosted:
+                return demo_payload(hosted_store.apply(token, body, choice))
+            return demo_payload(application.state.store.apply(body, choice))
         except scenario.ScenarioError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+
+    if not hosted:
+        register_live_rooms(application)
+    application.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+
+    return application
+
+
+def register_live_rooms(application):
+    @application.get("/room-panel")
+    @application.get("/static/room_panel.html")
+    def room_panel():
+        return FileResponse(ROOT / "live_pages" / "room_panel.html")
+
+    @application.get("/room-console")
+    @application.get("/static/room_console.html")
+    def room_console():
+        return FileResponse(ROOT / "live_pages" / "room_console.html")
 
     # === LIVE HARDWARE-IN-THE-LOOP CLASSROOM ENDPOINTS & WEBSOCKET ===
 
@@ -310,8 +361,6 @@ def create_app(room_clock=None):
         finally:
             ctrl.clients.pop(websocket, None)
             await ctrl.broadcast({"type": "snapshot", "state": ctrl.snapshot()}, target_role="console")
-
-    return application
 
 
 app = create_app()

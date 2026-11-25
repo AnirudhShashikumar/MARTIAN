@@ -6,9 +6,8 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-import agent
-import scenario
-from app import create_app
+from prototype import agent, scenario
+from prototype.app import create_app
 
 
 class ScenarioTest(TestCase):

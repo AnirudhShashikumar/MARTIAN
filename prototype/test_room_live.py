@@ -4,8 +4,8 @@ from unittest import TestCase, main
 
 from fastapi.testclient import TestClient
 
-import amb82_serial_bridge
-from app import create_app
+from prototype import amb82_serial_bridge
+from prototype.app import create_app
 
 
 class FakeClock:

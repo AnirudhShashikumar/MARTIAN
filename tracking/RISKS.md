@@ -13,3 +13,4 @@
 | Medium | The fleet map can be mistaken for a live occupancy feed. | Label it as a campus layout reference and keep all bay counts tied to the synthetic incident fixture. |
 | Tracked | Landing photography depicts illustrative sites. | Label photography and simulation mode on the landing page. Use the team-supplied layout for the BMSITM parking map. |
 | Medium | An earlier Uvicorn process may still serve the Alpha route at port 8765. | Start a fresh process before rehearsal. Use a free port if preserving the earlier demo session. |
+| Medium | The Vercel preview needs a configured PostgreSQL database. | Connect a disposable preview database and check `/api/health` and the two-branch flow after import. Keep the local SQLite and hardware demo available on the presenting laptop. |

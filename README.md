@@ -5,6 +5,7 @@ Competition workspace for **Mars — Agentic AI for a Smarter Campus** at BMSITM
 | Start here | Use |
 | --- | --- |
 | [Run CampusFlow](prototype/README.md) | Local prototype, controls, tests and model configuration |
+| [Deploy on Vercel](prototype/README.md#deploy-on-vercel) | Repository import, PostgreSQL setup and hosted simulation checks |
 | [Demo and presentation assets](presentation/DEMO_STORYBOARD.md) | 75-second script, screenshots and still-image fallback |
 | [Current status](tracking/STATUS.md) | Phase, clock, pending decisions and immediate action |
 | [Event context](context/HACKATHON_CONTEXT.md) | Schedule, source notes and organizer confirmations needed |

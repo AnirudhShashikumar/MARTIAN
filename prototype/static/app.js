@@ -418,8 +418,10 @@ function render() {
 
 async function api(path, options) {
   const response = await fetch(path, { cache: "no-store", ...options });
-  const data = await response.json();
-  if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : "The demo command was rejected.");
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data) {
+    throw new Error(typeof data?.detail === "string" ? data.detail : "CampusFlow could not complete the request. Try again.");
+  }
   return data;
 }
 
@@ -450,7 +452,7 @@ async function execute(name, key) {
     try {
       state = await api("/api/state");
     } catch {
-      notify("CampusFlow could not connect to the local server. Reload after the server is available.");
+      notify("CampusFlow could not refresh the demo. Reload after the server is available.");
     }
   } finally {
     busy = false;
@@ -486,9 +488,10 @@ async function loadState() {
     state = latest;
     notify();
     render();
-  } catch {
+  } catch (error) {
     if (!busy && state === previousState) {
-      notify("CampusFlow could not connect to the local server. Check that it is running and reload.");
+      notify(error instanceof TypeError ? "CampusFlow could not connect to the server. Reload to try again." : error.message);
+      if (!state) $("#operation").replaceChildren();
     }
   }
 }

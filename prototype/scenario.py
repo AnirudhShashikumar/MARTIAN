@@ -373,3 +373,33 @@ def update_equipment(state, entries, checkout):
     verb = "checked out" if checkout else "returned"
     audit(entries, state, "Act", f"{item['kit']} {verb}",
           f"Sample inventory now has {item['available']} of {item['total']} kits available.", "resources")
+
+
+def apply_command(state, command, entries, choice=None):
+    """Apply a validated command to a snapshot inside the caller's write transaction."""
+    require(state["id"] == command.run_id, "This demo was reset. Reload the current scenario.")
+    action = command.action
+    branch = None
+
+    if action == "reset":
+        return fixture(), branch
+    if action == "trigger":
+        inject_change(state, entries)
+    elif action in {"run", "confirm"}:
+        run_agent(state, entries, choice)
+    elif action in {"occupied", "vacant", "stale", "override"}:
+        room_event(state, entries, action)
+    elif action == "expire":
+        expire_overflow(state, entries)
+    elif action == "exit":
+        exit_vehicle(state, entries, "GATE-EXIT-021", "CAR-021")
+    elif action == "exit_overflow":
+        exit_vehicle(state, entries, "GATE-EXIT-078", "CAR-078")
+    elif action in {"checkout_kit", "return_kit"}:
+        update_equipment(state, entries, checkout=action == "checkout_kit")
+    elif action == "review":
+        require(all([command.branch, command.proposal, command.role, command.decision]),
+                "Select a proposal and a review decision.")
+        branch = review(state, entries, command.branch, command.proposal, command.role, command.decision)
+
+    return state, branch

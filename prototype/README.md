@@ -17,6 +17,29 @@ Open [CampusFlow on localhost](http://127.0.0.1:8765/). With the listed dependen
 
 Start a fresh server after changing FastAPI routes. If port 8765 is already occupied, use `--port 8766` and open [localhost:8766](http://127.0.0.1:8766/).
 
+## Deploy on Vercel
+
+1. Import this Git repository into Vercel and set the **Root Directory** to the repository root. The configuration uses the FastAPI preset, Python 3.12, and `server.py`. Leave the build, install and output overrides at their defaults. [FastAPI on Vercel](https://vercel.com/docs/frameworks/backend/fastapi)
+2. Connect a PostgreSQL database, such as Neon through Vercel Storage. Set a pooled TLS connection string as `DATABASE_URL` for each environment you deploy. Use a separate preview database or branch. The database role needs permission to create CampusFlow’s session table and index on first use. [Neon Vercel integration](https://neon.com/docs/guides/vercel-managed-integration)
+3. Deploy a Preview and check `/api/health` for `{"status":"ok"}`. Open the landing page and complete the parking and room approval flow across both dashboards. Open a private browser window to confirm that it starts with a separate run. Promote the preview after the checks pass.
+
+The hosted demo stores synthetic state and audit events in PostgreSQL. The browser keeps an HTTP-only HTTPS session cookie. Each session lasts 24 hours. Expired sessions are removed as new sessions start. The local Uvicorn demo uses its existing SQLite store.
+
+The live AMB82 serial bridge, Android WebSocket panel, and classroom console run on the private local server. The hosted room URLs link visitors to the simulated facilities dashboard.
+
+Structured intake is the hosted default. On a protected deployment with team-approved model access, set `CAMPUSFLOW_ENABLE_HOSTED_MODEL=1`, `GEMINI_API_KEY`, and `CAMPUSFLOW_GEMINI_MODEL` in Vercel. Use [the environment template](../.env.example) as a reference.
+
+For local Vercel verification, export the URL for a disposable PostgreSQL database as `DATABASE_URL` and run from the repository root:
+
+```sh
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+VERCEL_ENV=development npx vercel dev --local --listen 127.0.0.1:8888
+```
+
+Use a fresh browser session at [localhost:8888](http://127.0.0.1:8888/). Set `CAMPUSFLOW_TEST_DATABASE_URL` to a disposable PostgreSQL database URL before running the test suite to exercise durability, session isolation, concurrent approvals, and rollback.
+
 ## Dashboards
 
 | Route | Sections |
@@ -55,7 +78,7 @@ Use **Run agent** after the note arrives. The server sends the fixed synthetic n
 | Vehicle Fleet Management | Implemented parking overview, a campus parking map, gate ledger and overflow approvals. Class-based assignments, protected capacity, expiry, idempotent exits and transactional readback run on sample data. |
 | College Resource Allocation | Implemented room/device, lab, library-seat and sports-equipment views. Room counts, lab states and library seating are fixtures. One sports kit supports mock checkout and return. |
 | Agent coordination | Implemented evidence, planning, permissioned action, readback, explainability and room recovery. The optional model is limited to selecting an intake tool. |
-| Approval and safety | Implemented independent proposal IDs and version checks. The presenter plays simulated staff roles in a single localhost workspace. Device writes are confined to SQLite. |
+| Approval and safety | Implemented independent proposal IDs and version checks. The presenter plays simulated staff roles. Simulated device writes go to SQLite locally and per-browser PostgreSQL state on Vercel. |
 | Current limits | One schedule change and fixed synthetic inputs. Library capacity is a snapshot. Room control covers the one approval and readback sequence. Staff authentication, streaming occupancy, automatic power restoration and live campus integration are future work. |
 
 ## Verify
@@ -69,6 +92,8 @@ node --check prototype/static/app.js
 ## Tools and attribution
 
 Original CampusFlow prototype implementation for this event, assisted by OpenAI Codex. The runtime uses Python and its SQLite module, FastAPI (MIT), Pydantic (MIT), and Uvicorn (BSD 3-Clause). HTTPX (BSD 3-Clause) is a development test dependency. The browser UI uses vanilla HTML, CSS and JavaScript, local system fonts, and the BMSITM crest from the team-supplied lockup. Optional model provider is Google's Gemini API. The presentation screenshots were captured in the Codex in-app browser and the diagram exports use Pillow (HPND). Record team members and their actual contributions in the event submission.
+
+The hosted simulation uses Vercel Functions and PostgreSQL through Psycopg (LGPL-3.0).
 
 The team-supplied parking screenshot matches the base floorplan in the [existing parking simulation](../presentation/campusflow_parking_sim.html). The frontend uses a WebP export of that base map. Pillow was used to prepare the local image assets and CampusFlow mark. The [illustrative reading-room photograph](static/resource-library.webp) was created with built-in OpenAI ImageGen.
 

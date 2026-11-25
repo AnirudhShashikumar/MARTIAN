@@ -5,7 +5,7 @@ import os
 import re
 from urllib.request import Request, urlopen
 
-from scenario import NOTE, SESSION_ID
+from prototype.scenario import NOTE, SESSION_ID
 
 
 MANUAL = {
