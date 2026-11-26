@@ -1,123 +1,49 @@
-<!DOCTYPE html>
-<html lang="en" data-type="software">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="page-type" content="software" />
-<meta name="site-kind" content="software" />
-<title>CampusFlow · Vehicle Fleet Management</title>
+<meta name="color-scheme" content="light" />
+<meta name="theme-color" content="#f7f7f2" />
+<title>Vehicle Fleet Management · CampusFlow</title>
 <link rel="icon" href="/static/campusflow-icon.png" type="image/png" />
+<link rel="stylesheet" href="/static/styles.css" />
 <style>
   :root {
-    --bg: #080b11;
-    --surface: #0e121b;
-    --surface-2: #151b28;
-    --surface-3: #1d2536;
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.16);
-    --text: #f1f5f9;
-    --text-2: #94a3b8;
-    --text-3: #64748b;
-    --emerald: #10b981;
-    --emerald-soft: rgba(16, 185, 129, 0.14);
-    --amber: #f59e0b;
-    --amber-soft: rgba(245, 158, 11, 0.15);
-    --rose: #ef4444;
-    --rose-soft: rgba(239, 68, 68, 0.14);
-    --sky: #38bdf8;
-    --sky-soft: rgba(56, 189, 248, 0.14);
-    --accent: #f97316;
-    --ease: cubic-bezier(0.22, 1, 0.36, 1);
-    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    --bg: #f7f7f2;
+    --surface: #ffffff;
+    --surface-2: #f4f5ef;
+    --surface-3: #ecefe5;
+    --border: #e0e3d9;
+    --border-strong: #cfd6c8;
+    --text: #222720;
+    --text-2: #595f54;
+    --text-3: #6c7366;
+    --emerald: #30593c;
+    --emerald-soft: #e4efdf;
+    --amber: #754809;
+    --amber-soft: #f8edd6;
+    --rose: #8c352b;
+    --rose-soft: #f9e8e2;
+    --sky: #22495c;
+    --sky-soft: #e2f0f6;
+    --ease: cubic-bezier(.2, .75, .25, 1);
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    min-height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* TOP BAR (MATCHES e:\campusflow_parking_sim.html DARK STYLE + APP NAV) */
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    display: flex;
+  .fleet-clock {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 10px 20px;
-    background: rgba(14, 18, 27, 0.96);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    color: var(--text);
-  }
-  .brand-mark {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
-    background: var(--accent);
-    color: #080b11;
-    font-weight: 800;
-    font-size: 12.5px;
-    display: grid;
-    place-items: center;
-  }
-  .brand-name { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
-  .brand-sub { font-size: 11.5px; color: var(--text-3); margin-left: 6px; font-weight: 500; }
-
-  .nav-links {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .nav-links a {
-    text-decoration: none;
-    color: var(--text-2);
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 7px;
-    transition: background-color 140ms var(--ease), color 140ms var(--ease);
-  }
-  .nav-links a:hover { background: var(--surface-2); color: var(--text); }
-  .nav-links a[aria-current="page"] {
-    background: var(--surface-3);
-    color: var(--text);
-    border: 1px solid var(--border-strong);
-  }
-
-  .top-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .clock {
-    font-family: var(--mono);
+    min-height: 42px;
+    padding: 0 12px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--muted);
+    font: 600 .82rem/1 var(--mono);
     font-variant-numeric: tabular-nums;
-    font-size: 11.5px;
-    color: var(--text-2);
-    padding: 5px 9px;
-    border-radius: 6px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
   }
 
-  /* PAGE SHELL */
-  .page {
-    max-width: 1520px;
-    margin: 0 auto;
-    padding: 16px 20px 28px;
+  .fleet-page {
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -127,7 +53,7 @@
   .screens-row {
     display: grid;
     grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    gap: 16px;
+    gap: 14px;
     align-items: stretch;
   }
   @media (max-width: 1020px) {
@@ -135,17 +61,16 @@
   }
 
   .screen-box {
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    border-radius: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 500px;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+    min-height: 490px;
   }
 
-  /* LEFT SCREEN: EMPTY FOR NOW + LOAD CLIP BUTTON */
+  /* LEFT SCREEN: GATE VIDEO CLIP PLAYER + LOAD CLIP */
   .clip-screen {
     position: relative;
     flex: 1;
@@ -153,9 +78,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #070a10;
-    padding: 20px;
-    min-height: 440px;
+    background: #14181f;
+    padding: 18px;
+    min-height: 420px;
   }
   .clip-video {
     position: absolute;
@@ -163,21 +88,25 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    background: #000;
+    background: #14181f;
   }
   .clip-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 10px 14px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    background: #fcfcf8;
+    border-top: 1px solid var(--line);
   }
   .clip-meta {
     font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-3);
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* RIGHT SCREEN: MAP ONLY */
@@ -187,48 +116,49 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
-    background: #0b0f17;
+    padding: 12px;
+    background: #f4f5ef;
     overflow: hidden;
   }
 
   .story-pill {
     position: absolute;
-    top: 16px;
+    top: 18px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;
     display: inline-flex;
     align-items: center;
-    gap: 9px;
-    padding: 6px 13px;
+    gap: 8px;
+    padding: 7px 14px;
     border-radius: 999px;
-    background: rgba(14, 18, 27, 0.92);
-    border: 1px solid var(--border-strong);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--text);
+    background: rgba(252, 252, 248, 0.96);
+    border: 1px solid #cfd6c8;
+    box-shadow: 0 6px 18px rgba(23, 38, 19, 0.14);
+    font-size: .8rem;
+    font-weight: 650;
+    color: var(--ink);
     max-width: calc(100% - 32px);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
   }
-  .story-dot { width: 8px; height: 8px; border-radius: 99px; background: var(--emerald); flex-shrink: 0; }
-  .story-pill.warn { border-color: rgba(245, 158, 11, 0.65); }
-  .story-pill.warn .story-dot { background: var(--amber); }
-  .story-pill.alert { border-color: rgba(239, 68, 68, 0.65); }
-  .story-pill.alert .story-dot { background: var(--rose); }
-  .story-pill.sky { border-color: rgba(56, 189, 248, 0.65); }
-  .story-pill.sky .story-dot { background: var(--sky); }
+  .story-dot { width: 8px; height: 8px; border-radius: 99px; background: var(--green); flex-shrink: 0; }
+  .story-pill.warn { border-color: #d9b677; background: #fcf4e5; color: var(--amber); }
+  .story-pill.warn .story-dot { background: #c2780a; }
+  .story-pill.alert { border-color: #dfb9a9; background: var(--red-bg); color: var(--red); }
+  .story-pill.alert .story-dot { background: var(--red); }
+  .story-pill.sky { border-color: #b4d3e0; background: var(--sky-soft); color: var(--sky); }
+  .story-pill.sky .story-dot { background: #1e7094; }
 
   #simSvg {
     width: 100%;
     height: 100%;
-    max-height: 540px;
-    border-radius: 8px;
-    background: #131822;
+    max-height: 520px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: #e5eadb;
     user-select: none;
     display: block;
   }
@@ -239,21 +169,21 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 10px;
-    padding: 8px 14px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    font-size: 11px;
-    color: var(--text-2);
+    padding: 11px 16px;
+    background: #fcfcf8;
+    border-top: 1px solid var(--line);
+    font-size: .78rem;
+    color: var(--muted);
   }
-  .legend-items { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
-  .legend-item { display: inline-flex; align-items: center; gap: 6px; }
-  .swatch { width: 9px; height: 9px; border-radius: 2.5px; display: inline-block; }
+  .legend-items { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .legend-item { display: inline-flex; align-items: center; gap: 6px; font-weight: 560; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
   /* ================= BOTTOM CONTROLS (OUTSIDE THE TWO SCREENS) ================= */
   .controls-deck {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
 
   .deck-row {
@@ -262,64 +192,83 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    padding: 14px 16px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
   }
 
-  /* SIMULATION BUTTONS BAR (OUTSIDE SCREEN BOXES) */
   .btn-strip {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
   }
 
-  button {
-    font-family: inherit;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    color: var(--text);
-    border-radius: 7px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 600;
+  .fleet-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 7px;
-    transition: background-color 140ms var(--ease), border-color 140ms var(--ease), transform 110ms var(--ease);
+    min-height: 38px;
+    padding: 7px 13px;
+    border-radius: 9px;
+    border: 1px solid #cfd6c8;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: .84rem;
+    font-weight: 650;
+    cursor: pointer;
+    transition: background-color 150ms var(--ease), border-color 150ms var(--ease), transform 100ms var(--ease);
   }
-  button:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-strong); }
-  button:active:not(:disabled) { transform: scale(0.97); }
-  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .fleet-btn:hover:not(:disabled) { background: #ecefe5; border-color: #bcc6b3; }
+  .fleet-btn:active:not(:disabled) { transform: scale(0.98); }
+  .fleet-btn:disabled { opacity: .45; cursor: not-allowed; }
 
-  .btn-featured {
-    background: rgba(249, 115, 22, 0.16);
-    border-color: rgba(249, 115, 22, 0.55);
-    color: #ffedd5;
+  .fleet-btn.btn-featured {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
   }
-  .btn-featured:hover:not(:disabled) {
-    background: rgba(249, 115, 22, 0.26);
-    border-color: rgba(249, 115, 22, 0.8);
+  .fleet-btn.btn-featured:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
   }
   .demo-num {
     width: 19px;
     height: 19px;
     border-radius: 5px;
-    background: var(--surface-3);
-    color: var(--text);
+    background: #ecefe5;
+    color: var(--ink);
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: .72rem;
     font-weight: 800;
     display: grid;
     place-items: center;
   }
-  .btn-featured .demo-num { background: var(--accent); color: #080b11; }
-  .btn-approve { background: var(--emerald); border-color: var(--emerald); color: #052017; font-weight: 700; }
-  .btn-approve:hover:not(:disabled) { background: #34d399; border-color: #34d399; }
-  .btn-reject { background: var(--rose-soft); border-color: rgba(239, 68, 68, 0.45); color: #fecaca; }
-  .btn-reject:hover:not(:disabled) { background: rgba(239, 68, 68, 0.25); }
-  .btn-sm { padding: 6px 10px; font-size: 11.5px; }
-  .btn-xs { padding: 3px 7px; font-size: 10.5px; border-radius: 5px; }
+  .btn-featured .demo-num { background: rgba(255, 255, 255, 0.2); color: #fff; }
+  .fleet-btn.btn-approve { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  .fleet-btn.btn-approve:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .fleet-btn.btn-reject { background: var(--red-bg); border-color: #dfb9a9; color: var(--red); }
+  .fleet-btn.btn-reject:hover:not(:disabled) { background: #f4d9cf; }
+  .btn-xs {
+    padding: 4px 9px;
+    min-height: 26px;
+    font-size: .76rem;
+    border-radius: 6px;
+    border: 1px solid #dfb9a9;
+    background: var(--red-bg);
+    color: var(--red);
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .btn-xs:hover { background: #f4d9cf; }
+  .btn-xs.btn-subtle {
+    border-color: #cfd6c8;
+    background: var(--soft);
+    color: var(--muted);
+  }
+  .btn-xs.btn-subtle:hover { background: #ecefe5; color: var(--ink); }
 
   /* APPROVAL CARD */
   #approvalCard {
@@ -328,70 +277,86 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
-    padding: 12px 15px;
-    border-radius: 9px;
-    background: rgba(245, 158, 11, 0.12);
-    border: 1.5px solid rgba(245, 158, 11, 0.68);
+    padding: 14px 18px;
+    border-radius: 16px;
+    background: #fcf4e5;
+    border: 1.5px solid #e2c288;
   }
   #approvalCard.visible { display: flex; }
-  .ap-desc { font-size: 12.5px; color: var(--text); }
-  .ap-desc strong { color: #fcd34d; }
+  .ap-desc { font-size: .9rem; color: var(--ink); line-height: 1.4; }
+  .ap-desc strong { color: var(--amber); }
   .ap-btns { display: flex; gap: 8px; }
 
   /* 4 LIVE STATUS TILES */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
+    gap: 12px;
   }
   @media (max-width: 780px) {
     .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   .stat-tile {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    padding: 10px 13px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
-  .stat-tile.full { border-color: rgba(239, 68, 68, 0.48); background: rgba(239, 68, 68, 0.08); }
-  .stat-tile.active { border-color: rgba(56, 189, 248, 0.48); background: rgba(56, 189, 248, 0.08); }
-  .stat-tile.warn { border-color: rgba(245, 158, 11, 0.55); background: rgba(245, 158, 11, 0.08); }
-  .stat-label { font-size: 11px; font-weight: 600; color: var(--text-2); display: flex; justify-content: space-between; }
-  .stat-state { font-size: 10px; font-weight: 700; color: var(--emerald); }
-  .stat-tile.full .stat-state { color: #fca5a5; }
-  .stat-tile.active .stat-state { color: #7dd3fc; }
-  .stat-tile.warn .stat-state { color: #fcd34d; }
-  .stat-big { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 800; line-height: 1; }
-  .stat-big span { font-size: 12px; font-weight: 600; color: var(--text-3); }
-  .meter { height: 3.5px; border-radius: 99px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
-  .meter-bar { height: 100%; width: 100%; transform-origin: left center; transform: scaleX(0); background: var(--emerald); transition: transform 220ms var(--ease), background-color 180ms var(--ease); }
+  .stat-tile.full { border-color: #dfb9a9; background: var(--red-bg); }
+  .stat-tile.active { border-color: #b4d3e0; background: var(--sky-soft); }
+  .stat-tile.warn { border-color: #ebd8b6; background: #fcf4e5; }
+  .stat-label { font-size: .82rem; font-weight: 650; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+  .stat-state { font-size: .74rem; font-weight: 700; color: var(--green); }
+  .stat-tile.full .stat-state { color: var(--red); }
+  .stat-tile.active .stat-state { color: var(--sky); }
+  .stat-tile.warn .stat-state { color: var(--amber); }
+  .stat-big { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 1.45rem; font-weight: 720; letter-spacing: -.04em; line-height: 1; color: var(--ink); }
+  .stat-big span { font-size: .84rem; font-weight: 600; color: var(--muted); }
+  .meter { height: 6px; border-radius: 99px; background: #e5eadf; overflow: hidden; }
+  .meter-bar { height: 100%; width: 100%; transform-origin: left center; transform: scaleX(0); background: #54704c; transition: transform 220ms var(--ease), background-color 180ms var(--ease); }
 
   /* INSPECTOR PANEL (AI DECISION / PARKED DB / AUDIT) */
   .inspector-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 18px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
   }
   .seg-bar {
     display: inline-flex;
+    flex-wrap: wrap;
     gap: 4px;
+    width: max-content;
+    max-width: 100%;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #eeefe9;
   }
   .seg-btn {
-    padding: 6px 12px;
-    font-size: 11.5px;
-    color: var(--text-2);
+    padding: 7px 14px;
+    font-size: .84rem;
+    font-weight: 650;
+    color: var(--muted);
     background: transparent;
-    border-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 140ms var(--ease), color 140ms var(--ease);
   }
-  .seg-btn:hover { background: var(--surface-2); color: var(--text); }
-  .seg-btn.active { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
+  .seg-btn:hover { background: #e6e9df; color: var(--ink); }
+  .seg-btn.active {
+    background: var(--paper);
+    border-color: #dde1d5;
+    color: var(--ink);
+    box-shadow: 0 1px 2px #26322112;
+  }
 
   .pane { display: none; }
   .pane.active { display: block; }
@@ -403,50 +368,51 @@
   }
   @media (max-width: 900px) { .loop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .loop-step {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--text-3);
-    border-radius: 7px;
-    padding: 9px 11px;
+    background: #f8f8f4;
+    border: 1px solid var(--line);
+    border-left: 3.5px solid #9ca890;
+    border-radius: 12px;
+    padding: 11px 13px;
   }
-  .loop-step.s-sense { border-left-color: var(--sky); }
-  .loop-step.s-think { border-left-color: #a78bfa; }
-  .loop-step.s-act { border-left-color: var(--emerald); }
-  .loop-step.s-explain { border-left-color: var(--amber); }
-  .loop-step.s-guard { border-left-color: var(--rose); background: rgba(239, 68, 68, 0.08); }
-  .loop-label { font-family: var(--mono); font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 3px; display: flex; justify-content: space-between; }
-  .s-sense .loop-label { color: #7dd3fc; }
-  .s-think .loop-label { color: #ddd6fe; }
-  .s-act .loop-label { color: #6ee7b7; }
-  .s-explain .loop-label { color: #fde68a; }
-  .s-guard .loop-label { color: #fca5a5; }
-  .loop-text { font-size: 12px; color: var(--text); line-height: 1.4; }
+  .loop-step.s-sense { border-left-color: #2b6f8d; }
+  .loop-step.s-think { border-left-color: #635291; }
+  .loop-step.s-act { border-left-color: #30593c; }
+  .loop-step.s-explain { border-left-color: #9e6514; }
+  .loop-step.s-guard { border-left-color: var(--red); background: var(--red-bg); }
+  .loop-label { font-family: var(--mono); font-size: .72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 5px; display: flex; justify-content: space-between; gap: 6px; }
+  .s-sense .loop-label { color: #22495c; }
+  .s-think .loop-label { color: #4d3e75; }
+  .s-act .loop-label { color: var(--green); }
+  .s-explain .loop-label { color: var(--amber); }
+  .s-guard .loop-label { color: var(--red); }
+  .loop-text { font-size: .84rem; color: var(--ink); line-height: 1.45; }
 
-  .table-wrap { max-height: 220px; overflow-y: auto; }
-  .data-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-  .data-table th, .data-table td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--border); }
-  .data-table th { color: var(--text-3); font-size: 9.5px; text-transform: uppercase; position: sticky; top: 0; background: var(--surface); }
-  .tag-ok { color: #6ee7b7; font-weight: 600; }
-  .tag-pend { color: #fcd34d; font-weight: 600; }
-  .tag-rej { color: #fca5a5; font-weight: 600; }
+  .table-wrap { max-height: 240px; overflow-y: auto; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+  .data-table th, .data-table td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); color: var(--ink); }
+  .data-table th { color: var(--muted); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; position: sticky; top: 0; background: var(--paper); }
+  .data-table tbody tr:last-child td { border-bottom: 0; }
+  .tag-ok { color: var(--green); font-weight: 700; }
+  .tag-pend { color: var(--amber); font-weight: 700; }
+  .tag-rej { color: var(--red); font-weight: 700; }
 
   #tooltip {
     position: fixed;
     pointer-events: none;
     z-index: 60;
-    background: rgba(14, 18, 27, 0.96);
-    border: 1px solid var(--border-strong);
-    border-radius: 8px;
-    padding: 8px 11px;
-    font-size: 11.5px;
-    color: var(--text);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+    background: #fcfcf8;
+    border: 1px solid #cfd6c8;
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: .8rem;
+    color: var(--ink);
+    box-shadow: 0 10px 26px rgba(23, 38, 19, 0.18);
     display: none;
-    min-width: 170px;
+    min-width: 175px;
   }
   #tooltip .tt-head { font-weight: 700; margin-bottom: 3px; display: flex; justify-content: space-between; gap: 10px; }
-  #tooltip .tt-row { color: var(--text-2); font-size: 11px; line-height: 1.45; }
-  #tooltip .tt-hint { color: var(--sky); font-size: 10.5px; margin-top: 4px; font-weight: 600; }
+  #tooltip .tt-row { color: var(--muted); font-size: .76rem; line-height: 1.45; }
+  #tooltip .tt-hint { color: var(--sky); font-size: .74rem; margin-top: 4px; font-weight: 650; }
 
   #toastWrap {
     position: fixed;
@@ -457,22 +423,22 @@
     flex-direction: column;
     gap: 8px;
     pointer-events: none;
-    max-width: 320px;
+    max-width: 340px;
   }
   .toast {
-    background: rgba(14, 18, 27, 0.96);
-    border: 1px solid var(--border-strong);
-    border-left: 3px solid var(--sky);
-    border-radius: 8px;
-    padding: 9px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+    background: #fcfcf8;
+    border: 1px solid #cfd6c8;
+    border-left: 3.5px solid #2b6f8d;
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: .84rem;
+    font-weight: 600;
+    color: var(--ink);
+    box-shadow: 0 8px 24px rgba(23, 38, 19, 0.15);
   }
-  .toast.ok { border-left-color: var(--emerald); }
-  .toast.warn { border-left-color: var(--amber); }
-  .toast.err { border-left-color: var(--rose); }
+  .toast.ok { border-left-color: var(--green); }
+  .toast.warn { border-left-color: #c2780a; }
+  .toast.err { border-left-color: var(--red); }
 
   @keyframes dashFlow { to { stroke-dashoffset: -36; } }
   .route-flow { animation: dashFlow 1s linear infinite; }
@@ -482,22 +448,20 @@
   }
 </style>
 </head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="/">
-      <div class="brand-mark">CF</div>
-      <span class="brand-name">CampusFlow</span>
-      <span class="brand-sub">Parking &amp; Fleet Operations Agent</span>
-    </a>
-    <nav class="nav-links" aria-label="Workspaces">
-      <a href="/">Home</a>
-      <a href="/fleet" aria-current="page">Vehicle Fleet</a>
-      <a href="/resources">College Resources</a>
-    </nav>
-    <div class="top-right">
-      <span class="clock" id="simClock">14:00:00 IST</span>
-      <button type="button" class="btn-sm" id="btnSpeed">1.5× Speed</button>
-      <button type="button" class="btn-sm" id="btnPause">Pause</button>
+<body class="dashboard-page">
+  <a class="skip-link" href="#operation">Skip to fleet operations</a>
+  <header class="masthead">
+    <div class="shell masthead-inner">
+      <a class="identity" href="/" aria-label="CampusFlow home">
+        <img class="brand-mark" src="/static/campusflow-icon.png" width="34" height="34" alt="" />
+        <span class="brand">CampusFlow</span>
+      </a>
+      <nav class="workspaces-nav" aria-label="Workspaces">
+        <a href="/">Home</a>
+        <a href="/fleet" aria-current="page">Vehicle Fleet</a>
+        <a href="/resources">College Resources</a>
+      </nav>
+      <span class="environment">Simulation mode</span>
     </div>
   </header>
 
@@ -505,17 +469,30 @@
   <nav id="subtabs" hidden></nav>
   <dialog id="audit-dialog"></dialog>
 
-  <main id="operation" class="page">
-    <!-- TOP: TWO SCREENS (LEFT: EMPTY + LOAD CLIP | RIGHT: MAP ONLY) -->
+  <main id="operation" class="shell dashboard fleet-page">
+    <header class="dashboard-heading">
+      <div>
+        <p class="eyebrow">Campus mobility</p>
+        <h1>Vehicle Fleet Management</h1>
+        <p id="dashboard-description">Track live gate clips, parking bay capacity, and overflow routing at Gate A.</p>
+      </div>
+      <div class="header-actions">
+        <span class="fleet-clock" id="simClock">14:00:00 IST</span>
+        <button type="button" class="button secondary" id="btnSpeed">1.5× Speed</button>
+        <button type="button" class="button secondary" id="btnPause">Pause</button>
+      </div>
+    </header>
+
+    <!-- TOP: TWO SCREENS (LEFT: VIDEO CLIP + LOAD CLIP | RIGHT: MAP ONLY) -->
     <section class="screens-row" aria-label="Fleet simulation screens">
-      <!-- LEFT SCREEN: EMPTY FOR NOW + LOAD CLIP BUTTON -->
+      <!-- LEFT SCREEN: GATE VIDEO PLAYER + LOAD CLIP BUTTON -->
       <div class="screen-box">
         <div class="clip-screen" id="clipViewport">
           <video id="clipPlayer" class="clip-video" playsinline muted hidden></video>
         </div>
         <div class="clip-bar">
           <span class="clip-meta" id="clipStatus"></span>
-          <button type="button" class="btn-sm" id="btnLoadClip">Load Clip</button>
+          <button type="button" class="button primary" id="btnLoadClip">Load Clip</button>
         </div>
       </div>
 
@@ -524,7 +501,7 @@
         <div class="map-screen">
           <div class="story-pill" id="storyPill">
             <span class="story-dot"></span>
-            <span id="storyText">3 cameras online — use the controls below or click any parked car/bike to remove it.</span>
+            <span id="storyText">3 cameras online — use Load Clip or controls below, or click any parked car/bike to exit.</span>
           </div>
           <svg id="simSvg" viewBox="0 0 1264 848" preserveAspectRatio="xMidYMid meet">
             <defs>
@@ -568,12 +545,12 @@
         </div>
         <div class="map-legend">
           <div class="legend-items">
-            <span class="legend-item"><span class="swatch" style="background:rgba(16,185,129,0.3);border:1.5px solid #10b981;"></span>Open</span>
-            <span class="legend-item"><span class="swatch" style="background:rgba(239,68,68,0.5);border:1.5px solid #f87171;"></span>Parked (Click to exit)</span>
-            <span class="legend-item"><span class="swatch" style="background:rgba(56,189,248,0.3);border:1.5px solid #38bdf8;"></span>♿ Accessible</span>
+            <span class="legend-item"><span class="swatch" style="background:rgba(16,185,129,0.28);border:1.5px solid #10b981;"></span>Open</span>
+            <span class="legend-item"><span class="swatch" style="background:rgba(239,68,68,0.38);border:1.5px solid #ef4444;"></span>Parked (Click to exit)</span>
+            <span class="legend-item"><span class="swatch" style="background:rgba(56,189,248,0.28);border:1.5px solid #38bdf8;"></span>♿ Accessible</span>
             <span class="legend-item"><span class="swatch" style="background:#0e121b;border:1.5px solid #38bdf8;border-radius:99px;"></span>3 Cameras (Gate, Car, Bike)</span>
           </div>
-          <span style="color:var(--text-3);font-family:var(--mono);font-size:10.5px;">Synthetic data · Saved in local DB</span>
+          <span style="color:var(--muted);font-family:var(--mono);font-size:.74rem;">Synthetic data · Saved in local DB</span>
         </div>
       </div>
     </section>
@@ -584,30 +561,30 @@
       <div id="approvalCard">
         <div class="ap-desc" id="apDesc"><strong>Attendant Approval Needed:</strong> Car lot is full (30/30). Route visiting car straight ahead and right to Overflow?</div>
         <div class="ap-btns">
-          <button type="button" class="btn-approve" id="btnApproveOv">Approve Overflow ↗</button>
-          <button type="button" class="btn-reject" id="btnRejectOv">Reject &amp; Exit</button>
+          <button type="button" class="fleet-btn btn-approve" id="btnApproveOv">Approve Overflow ↗</button>
+          <button type="button" class="fleet-btn btn-reject" id="btnRejectOv">Reject &amp; Exit</button>
         </div>
       </div>
 
       <!-- All Simulation Buttons (outside the screens) -->
       <div class="deck-row">
         <div class="btn-strip">
-          <button type="button" class="btn-featured" id="btnDemo1">
+          <button type="button" class="fleet-btn btn-featured" id="btnDemo1">
             <span class="demo-num">1</span> Car Lot Full → Overflow Approval
           </button>
-          <button type="button" id="btnDemo2">
+          <button type="button" class="fleet-btn" id="btnDemo2">
             <span class="demo-num">2</span> Bike Lot Full → Right Perimeter Redirect
           </button>
-          <button type="button" id="btnDemo3">
+          <button type="button" class="fleet-btn" id="btnDemo3">
             <span class="demo-num">3</span> Test Duplicate Scan Guard
           </button>
         </div>
         <div class="btn-strip">
-          <button type="button" id="btnAddCar">+ Car</button>
-          <button type="button" id="btnRemCar">− Car</button>
-          <button type="button" id="btnAddBike">+ Bike</button>
-          <button type="button" id="btnRemBike">− Bike</button>
-          <button type="button" id="btnReset">Reset</button>
+          <button type="button" class="fleet-btn" id="btnAddCar">+ Car</button>
+          <button type="button" class="fleet-btn" id="btnRemCar">− Car</button>
+          <button type="button" class="fleet-btn" id="btnAddBike">+ Bike</button>
+          <button type="button" class="fleet-btn" id="btnRemBike">− Bike</button>
+          <button type="button" class="fleet-btn" id="btnReset">Reset</button>
         </div>
       </div>
 
@@ -624,14 +601,14 @@
           <div class="meter"><div class="meter-bar" id="barBike1"></div></div>
         </div>
         <div class="stat-tile" id="tileBike2">
-          <div class="stat-label"><span>Bike Zone 2</span><span class="stat-state" id="stBike2" style="color:var(--text-3);">Standby</span></div>
+          <div class="stat-label"><span>Bike Zone 2</span><span class="stat-state" id="stBike2" style="color:var(--muted);">Standby</span></div>
           <div class="stat-big"><b id="numBike2">0</b><span> / 18</span></div>
           <div class="meter"><div class="meter-bar" id="barBike2"></div></div>
         </div>
         <div class="stat-tile" id="tileOverflow">
-          <div class="stat-label"><span>Car Overflow</span><span class="stat-state" id="stOv" style="color:var(--text-3);">Ready</span></div>
+          <div class="stat-label"><span>Car Overflow</span><span class="stat-state" id="stOv" style="color:var(--muted);">Ready</span></div>
           <div class="stat-big"><b id="numOv">0</b><span> routed</span></div>
-          <div class="meter"><div class="meter-bar" id="barOv" style="background:var(--amber);"></div></div>
+          <div class="meter"><div class="meter-bar" id="barOv" style="background:#c2780a;"></div></div>
         </div>
       </div>
 
@@ -665,9 +642,9 @@
         </div>
 
         <div class="pane" id="paneDb">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px;color:var(--text-2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:.82rem;color:var(--muted);">
             <span id="dbSummary">0 vehicles in DB</span>
-            <button type="button" class="btn-xs" id="btnEmptyDb">Clear All</button>
+            <button type="button" class="btn-xs btn-subtle" id="btnEmptyDb">Clear All</button>
           </div>
           <div class="table-wrap">
             <table class="data-table">
@@ -687,6 +664,8 @@
         </div>
       </div>
     </section>
+
+    <footer class="site-footer"><span>MARTIAN 1.0 · Checkpoint Beta</span><span>Sample records and local parking simulation DB</span></footer>
   </main>
 
   <div id="tooltip"></div>
@@ -1722,7 +1701,7 @@
 
   function showTip(e, head, status, row, hint) {
     const tt = document.getElementById('tooltip');
-    tt.innerHTML = `<div class="tt-head"><span>${head}</span><span style="color:${status === 'OCCUPIED' ? '#fca5a5' : '#6ee7b7'}">${status}</span></div><div class="tt-row">${row}</div>${hint ? `<div class="tt-hint">${hint}</div>` : ''}`;
+    tt.innerHTML = `<div class="tt-head"><span>${head}</span><span style="color:${status === 'OCCUPIED' ? '#8c352b' : '#30593c'}">${status}</span></div><div class="tt-row">${row}</div>${hint ? `<div class="tt-hint">${hint}</div>` : ''}`;
     tt.style.display = 'block';
     moveTip(e);
   }
